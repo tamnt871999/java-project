@@ -1,6 +1,6 @@
 package com.example.logistics.core.factory;
 
-import com.example.logistics.core.domain.ShipmentRequest;
+import com.example.logistics.core.port.dto.ShipmentRequest;
 import com.example.logistics.core.port.out.ShippingCarrierPort;
 
 /**

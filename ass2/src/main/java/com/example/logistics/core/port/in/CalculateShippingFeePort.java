@@ -1,7 +1,7 @@
 package com.example.logistics.core.port.in;
 
-import com.example.logistics.core.domain.ShipmentRequest;
-import com.example.logistics.core.domain.ShippingQuote;
+import com.example.logistics.core.port.dto.ShipmentRequest;
+import com.example.logistics.core.port.dto.ShippingQuote;
 
 /**
  * INBOUND PORT (driving port) - cua vao cua loi.

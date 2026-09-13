@@ -14,10 +14,10 @@ cd D:\Java\ass2
 |---|---|
 | `.\run.ps1 demo` | Chạy bộ kịch bản mẫu (mặc định) |
 | `.\run.ps1 quote "Ha Noi" 1200` | Báo giá một đơn (thành phố + số gram) |
-| `.\run.ps1 test` | Chạy 26 bài kiểm thử `SelfCheck` |
+| `.\run.ps1 test` | Chạy 38 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
 | `.\run.ps1 build` / `clean` | Chỉ biên dịch / dọn thư mục build |
 
-Kết quả hiện tại: **31/31 test pass**, trong đó có 3 fitness function canh giữ kiến trúc.
+Kết quả hiện tại: **38/38 test pass**, trong đó có 3 fitness function canh giữ kiến trúc.
 
 ---
 
@@ -89,7 +89,7 @@ Kiểm chứng thủ công tương đương:
 grep -r "import com.example.logistics.infrastructure" src/main/java/com/example/logistics/core
 ```
 
-Kết quả: rỗng. Mạnh hơn nữa — compile riêng 13 file của `core/` mà **không** kèm
+Kết quả: rỗng. Mạnh hơn nữa — compile riêng 14 file của `core/` mà **không** kèm
 một file infrastructure nào: `javac` exit code 0, lõi tự đứng được.
 
 ---
@@ -126,15 +126,30 @@ lại ở tầng Infrastructure:
 | | GHN | GHTK |
 |---|---|---|
 | Giao tiếp | SDK Java (object) | HTTP REST (chuỗi JSON thô) |
+| Định danh địa bàn | `district_id` — **số** (`1854`) | tên tỉnh tiếng Việt **có dấu** (`"Nghệ An"`) |
 | Trọng lượng | gram (`int`) | kilogram (`double`) |
 | Tiền | VND (`int`) | **nghìn đồng** (`int`) |
 | Thời gian | số ngày | số **giờ** |
 | Báo lỗi | trường `code` trong body | ném exception |
 
+**Bảng ánh xạ địa chỉ là tài sản riêng của từng Adapter.** Cùng một tỉnh, GHN gọi
+là `1854` còn GHTK đòi `"Nghệ An"`. Nếu nhét cả hai vào `City` thì Domain phải
+phình thêm một trường cho **mỗi** đối tác ký hợp đồng — tức là ký thêm đối tác lại
+phải sửa tầng trong cùng, đúng điều kiến trúc này muốn tránh. Để ở adapter thì
+Domain chỉ giữ duy nhất khóa chuẩn hóa không dấu (`"nghe an"`), mỗi adapter tự dịch
+sang định dạng đối tác của nó đòi hỏi.
+
 Adapter dịch hết về `ShippingQuote`, nên Use Case chỉ phải hiểu **một** dạng kết
 quả duy nhất. Ngoại lệ riêng của hạ tầng (`GhnApiException`, `GhtkApiException`)
 cũng được dịch sang `CarrierUnavailableException` của Core — nếu không, chi tiết
 công nghệ sẽ rò rỉ vào lõi qua đường `throws`.
+
+**Trường `serviceName` thay cho `note`.** Bản trước có trường `note` nhận chuỗi tự
+do do Adapter ghép sẵn, kiểu `"GHTK Tiet Kiem (72h)"`. Đó là một **lỗi ranh giới**:
+phần `(72h)` thực chất là cách *trình bày* lại thông tin mà `estimatedDays` đã mang,
+nên lõi vô tình chứa sẵn một mảnh giao diện. Nay đổi tên thành `serviceName` (tên
+gói dịch vụ — một dữ kiện nghiệp vụ thật, là căn cứ khi đối soát cước), bắt buộc
+không rỗng, và GHTK bóc nó ra từ payload JSON thay vì ghép chuỗi bằng tay.
 
 ### d. Factory ở Core mà vẫn không biết Infrastructure là ai
 
@@ -233,8 +248,10 @@ ass2/
 └── src/
     ├── main/java/com/example/logistics/
     │   ├── core/                              ← TẦNG APPLICATION CORE
-    │   │   ├── domain/                        (CarrierCode, City, Money, Weight,
-    │   │   │                                   ShipmentRequest, ShippingQuote)
+    │   │   ├── domain/                        CHỈ value object thuần:
+    │   │   │                                  CarrierCode, City, Money, Weight
+    │   │   ├── port/dto/ShipmentRequest.java   (DTO biên — hợp đồng dữ liệu)
+    │   │   ├── port/dto/ShippingQuote.java     (DTO biên)
     │   │   ├── port/in/CalculateShippingFeePort.java
     │   │   ├── port/out/ShippingCarrierPort.java          ← yêu cầu a
     │   │   ├── port/out/CarrierUnavailableException.java
@@ -248,24 +265,31 @@ ass2/
     │   │   └── cli/ShippingFeeCliAdapter.java  (driving adapter)
     │   └── bootstrap/Main.java                ← COMPOSITION ROOT (chỉ lắp ráp)
     └── test/java/com/example/logistics/
-        ├── SelfCheck.java                     (28 test nghiệp vụ)
+        ├── SelfCheck.java                     (35 test nghiệp vụ)
         └── ArchitectureFitness.java           (3 fitness function)
 ```
+
+`domain/` chỉ còn value object — thứ ổn định nhất, thay đổi chậm nhất. DTO biên
+(`ShipmentRequest`, `ShippingQuote`) nằm ở `port/dto` vì chúng là **hợp đồng dữ
+liệu tại ranh giới** do Use Case định nghĩa, không phải khái niệm nghiệp vụ tồn
+tại độc lập. Để chung với domain thì sớm muộn nhu cầu của tầng web sẽ bò ngược vào
+tầng trong cùng — một ngày đẹp trời có người thêm `@JsonProperty` hoặc một trường
+chỉ để hiển thị vào đó, và entity bị kéo theo nhịp thay đổi của REST API.
 
 ---
 
 ## 7. Kết quả chạy `.\run.ps1 demo`
 
 ```
-DIEM DEN                K.LUONG   NHA VAN CHUYEN           CUOC PHI    NGAY   GHI CHU
+DIEM DEN                K.LUONG   NHA VAN CHUYEN           CUOC PHI    NGAY   GOI DICH VU
 -------------------------------------------------------------------------------------
 Ha Noi                     800g   GiaoHangNhanh              27,000       1   GHN Standard
 TP. Ho Chi Minh           1200g   GiaoHangNhanh              32,000       1   GHN Standard
 hcm                       1200g   GiaoHangNhanh              32,000       1   GHN Standard
 Đà Nẵng                   2500g   GiaoHangNhanh              42,000       1   GHN Standard
-Nghe An                    800g   GiaoHangTietKiem           26,000       3   GHTK Tiet Kiem (72h)
-Ca Mau                    3000g   GiaoHangTietKiem           42,000       3   GHTK Tiet Kiem (72h)
-Binh Duong                5000g   GiaoHangTietKiem           48,000       2   GHTK Tiet Kiem (36h)
+Nghe An                    800g   GiaoHangTietKiem           26,000       3   GHTK Tiet Kiem
+Ca Mau                    3000g   GiaoHangTietKiem           42,000       3   GHTK Tiet Kiem
+Binh Duong                5000g   GiaoHangTietKiem           48,000       2   GHTK Tiet Kiem
 Son La                   25000g   GHTK                   TU CHOI - GHTK khong nhan kien hang tren 20kg
 ```
 

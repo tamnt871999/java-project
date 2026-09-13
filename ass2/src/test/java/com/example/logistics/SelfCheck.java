@@ -4,11 +4,11 @@ import com.example.logistics.core.domain.CarrierCode;
 import com.example.logistics.core.domain.City;
 import com.example.logistics.core.domain.DomainException;
 import com.example.logistics.core.domain.Money;
-import com.example.logistics.core.domain.ShipmentRequest;
-import com.example.logistics.core.domain.ShippingQuote;
 import com.example.logistics.core.factory.CarrierRoutingPolicy;
 import com.example.logistics.core.factory.ShippingCarrierFactory;
 import com.example.logistics.core.factory.ShippingCarrierProvider;
+import com.example.logistics.core.port.dto.ShipmentRequest;
+import com.example.logistics.core.port.dto.ShippingQuote;
 import com.example.logistics.core.port.in.CalculateShippingFeePort;
 import com.example.logistics.core.port.out.CarrierUnavailableException;
 import com.example.logistics.core.port.out.ShippingCarrierPort;
@@ -44,6 +44,8 @@ public final class SelfCheck {
         thieuAdapterThiBaoLoiCauHinh();
         tuChoiDuLieuDauVaoSai();
         doiChienLuocChonHangMaKhongSuaUseCase();
+        adapterTuGiuBangAnhXaDiaChi();
+        baoGiaLuonKemTenGoiDichVu();
         ArchitectureFitness.run();
 
         System.out.println();
@@ -192,6 +194,49 @@ public final class SelfCheck {
                 useCase.calculate(ShipmentRequest.of("Son La", 800)).getCarrier());
     }
 
+    /**
+     * Moi doi tac dinh danh dia ban mot kieu, va bang anh xa la tai san RIENG
+     * cua tung Adapter chu khong phai cua Domain.
+     *
+     * Domain chi giu duy nhat khoa chuan hoa khong dau ("nghe an"); GHN dich
+     * sang so 1854, GHTK dich sang "Nghe An" co dau. Dia ban ngoai danh muc thi
+     * Adapter bao loi bang ngon ngu cua loi, khong nem kieu la ra ngoai.
+     */
+    private static void adapterTuGiuBangAnhXaDiaChi() {
+        ShippingCarrierPort ghn = new GhnCarrierAdapter("TOKEN-TEST");
+        ShippingCarrierPort ghtk = new GhtkCarrierAdapter("https://demo.ghtk.vn");
+
+        // Cung mot City, hai adapter deu bao gia duoc du dinh danh khac han nhau.
+        check("GHN nhan dien Nghe An", CarrierCode.GHN,
+                ghn.calculateFee(ShipmentRequest.of("Nghe An", 500)).getCarrier());
+        check("GHTK nhan dien Nghe An", CarrierCode.GHTK,
+                ghtk.calculateFee(ShipmentRequest.of("Nghe An", 500)).getCarrier());
+
+        // Dia ban chua co trong danh muc doi tac.
+        expectCarrierUnavailable("GHN tu choi dia ban la", CarrierCode.GHN,
+                () -> ghn.calculateFee(ShipmentRequest.of("Hoang Sa", 500)));
+        expectCarrierUnavailable("GHTK tu choi dia ban la", CarrierCode.GHTK,
+                () -> ghtk.calculateFee(ShipmentRequest.of("Hoang Sa", 500)));
+    }
+
+    /**
+     * Bao gia phai kem ten GOI DICH VU - mot du kien nghiep vu that, khong phai
+     * chuoi ghi chu tu do de Adapter nhet gi vao cung duoc.
+     */
+    private static void baoGiaLuonKemTenGoiDichVu() {
+        ShippingCarrierPort ghn = new GhnCarrierAdapter("TOKEN-TEST");
+        ShippingCarrierPort ghtk = new GhtkCarrierAdapter("https://demo.ghtk.vn");
+
+        check("ten goi dich vu GHN", "GHN Standard",
+                ghn.calculateFee(ShipmentRequest.of("Ha Noi", 500)).getServiceName());
+        // Ten goi cua GHTK duoc boc ra tu payload JSON, khong phai chuoi ghep tay.
+        check("ten goi dich vu GHTK", "GHTK Tiet Kiem",
+                ghtk.calculateFee(ShipmentRequest.of("Ha Noi", 1000)).getServiceName());
+
+        expectDomainError("bao gia thieu ten goi dich vu",
+                () -> new ShippingQuote(CarrierCode.GHN, Money.ofVnd(1000), 1, "  "));
+    }
+
     // ------------------------------------------------------------ ha tang test
 
     /**
@@ -249,6 +294,15 @@ public final class SelfCheck {
                 CarrierRoutingPolicy.defaultPolicy(),
                 List.of(new GhnCarrierAdapter("TOKEN-TEST"),
                         new GhtkCarrierAdapter("https://demo.ghtk.vn"))));
+    }
+
+    private static void expectCarrierUnavailable(String name, CarrierCode expected, Runnable action) {
+        try {
+            action.run();
+            fail(name + " - le ra phai nem CarrierUnavailableException");
+        } catch (CarrierUnavailableException e) {
+            check(name, expected, e.getCarrier());
+        }
     }
 
     private static void expectDomainError(String name, Runnable action) {

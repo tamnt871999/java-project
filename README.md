@@ -26,7 +26,7 @@ cd ass1
 ```bash
 cd ass2
 .\run.ps1 demo           # bang bao gia theo tung tinh thanh
-.\run.ps1 test           # 31 test, gom 3 fitness function canh kien truc
+.\run.ps1 test           # 38 test, gom 3 fitness function canh kien truc
 ```
 
 Quy ước chung: comment trong mã nguồn viết tiếng Việt **không dấu** để tránh lỗi

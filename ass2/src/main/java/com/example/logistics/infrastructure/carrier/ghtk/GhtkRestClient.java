@@ -1,6 +1,5 @@
 package com.example.logistics.infrastructure.carrier.ghtk;
 
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -11,13 +10,19 @@ import java.util.Set;
  *
  *              | GHN                    | GHTK
  *   giao tiep  | SDK Java (object)      | HTTP REST (chuoi JSON tho)
+ *   dia chi    | district_id (so)       | TEN TINH tieng Viet CO DAU
  *   trong luong| gram (int)             | kilogram (double)
  *   tien       | VND (int)              | NGHIN dong (int)
  *   thoi gian  | so ngay                | so GIO
  *   bao loi    | truong code trong body | nem ngoai le
  *
- * Neu Use Case goi thang hai thu nay thi no phai tu biet quy doi gio sang ngay
- * va nghin dong sang dong - tuc la kien thuc ha tang da chui vao loi nghiep vu.
+ * Dong "dia chi" la vi du ro nhat: cung mot noi, GHN goi la 1854 con GHTK goi
+ * la "Nghệ An". Khong doi tac nao chiu doi theo doi tac nao, nen moi Adapter
+ * phai tu giu bang anh xa cua rieng minh.
+ *
+ * Neu Use Case goi thang hai thu nay thi no phai tu biet quy doi gio sang ngay,
+ * nghin dong sang dong, va nho ca hai kieu ma dia ban - tuc la kien thuc ha
+ * tang da chui vao loi nghiep vu.
  */
 public final class GhtkRestClient {
 
@@ -26,10 +31,10 @@ public final class GhtkRestClient {
     private static final int REMOTE_SURCHARGE_THOUSAND = 10;
     private static final double MAX_KILOGRAMS = 20.0;
 
-    /** Vung GHTK co buu cuc noi tinh - khong tinh phu phi lien vung. */
+    /** Tinh GHTK co buu cuc noi vung - khong tinh phu phi lien vung. */
     private static final Set<String> NEARBY_PROVINCES = Set.of(
-            "ha noi", "ho chi minh", "binh duong", "dong nai", "long an",
-            "bac ninh", "hung yen", "hai duong");
+            "Hà Nội", "Hồ Chí Minh", "Bình Dương", "Đồng Nai",
+            "Long An", "Bắc Ninh", "Hưng Yên", "Hải Dương");
 
     private final String baseUrl;
 
@@ -43,7 +48,8 @@ public final class GhtkRestClient {
     /**
      * Gia lap GET {baseUrl}/services/shipment/fee?province=...&weight=...
      *
-     * Tra ve CHUOI JSON TRO nhu mot API that, de Adapter phai tu boc tach.
+     * Tham so province la TEN TINH tieng Viet co dau, dung nhu API that yeu cau.
+     * Tra ve CHUOI JSON TRO de Adapter phai tu boc tach.
      */
     public String getShipmentFee(String province, double weightKg) {
         if (province == null || province.isBlank()) {
@@ -58,7 +64,7 @@ public final class GhtkRestClient {
                     "GHTK khong nhan kien hang tren " + (int) MAX_KILOGRAMS + "kg");
         }
 
-        boolean nearby = NEARBY_PROVINCES.contains(province.toLowerCase(Locale.ROOT));
+        boolean nearby = NEARBY_PROVINCES.contains(province);
         int extraHalfKg = (int) Math.max(0, Math.ceil((weightKg - 1.0) / 0.5));
         int feeThousand = BASE_FEE_THOUSAND
                 + extraHalfKg * FEE_PER_HALF_KG_THOUSAND

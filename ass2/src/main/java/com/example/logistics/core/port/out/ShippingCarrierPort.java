@@ -1,8 +1,8 @@
 package com.example.logistics.core.port.out;
 
 import com.example.logistics.core.domain.CarrierCode;
-import com.example.logistics.core.domain.ShipmentRequest;
-import com.example.logistics.core.domain.ShippingQuote;
+import com.example.logistics.core.port.dto.ShipmentRequest;
+import com.example.logistics.core.port.dto.ShippingQuote;
 
 /**
  * OUTBOUND PORT (driven port) - yeu cau a.

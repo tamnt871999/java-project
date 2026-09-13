@@ -1,6 +1,5 @@
 package com.example.logistics.infrastructure.carrier.ghn;
 
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -10,6 +9,11 @@ import java.util.Set;
  * phong cach rieng cua no - dung field public thay vi getter, dung int thay
  * vi BigDecimal, tra ve ma loi so thay vi nem ngoai le, do don vi la GRAM,
  * va bat buoc phai co token khi khoi tao.
+ *
+ * QUAN TRONG - dia chi la MA SO, khong phai ten: GHN dinh danh dia ban bang
+ * district_id (so nguyen trong danh muc rieng cua ho), y het API that. No
+ * khong he biet "ha noi" hay "Hà Nội" nghia la gi. Viec tra ten thanh pho ra
+ * district_id la trach nhiem cua GhnCarrierAdapter.
  *
  * Chinh vi ta khong the sua noi nhung thu nay ma he thong moi can Adapter:
  * ai do phai dich giua "the gioi cua GHN" va "the gioi cua Domain".
@@ -24,10 +28,9 @@ public final class GhnShippingSdk {
     private static final int FEE_PER_BLOCK = 5_000;
     private static final int REMOTE_SURCHARGE = 18_000;
 
-    /** Cac quan huyen GHN co kho trung chuyen - giao nhanh, khong phu phi vung xa. */
-    private static final Set<String> HUB_CITIES = Set.of(
-            "ha noi", "ho chi minh", "da nang", "hai phong", "can tho",
-            "binh duong", "dong nai");
+    /** district_id co kho trung chuyen - giao nhanh, khong phu phi vung xa. */
+    private static final Set<Integer> HUB_DISTRICT_IDS = Set.of(
+            1442, 1454, 1526, 1574, 1602, 1630, 1658);
 
     private final String token;
 
@@ -40,7 +43,7 @@ public final class GhnShippingSdk {
 
     /** Tham so goi API - kieu du lieu do GHN dinh nghia. */
     public static final class FeeRequest {
-        public String toDistrictName;
+        public int toDistrictId;
         public int weightGram;
         public int serviceTypeId;
     }
@@ -55,10 +58,15 @@ public final class GhnShippingSdk {
     }
 
     public FeeResponse calculateFee(FeeRequest request) {
-        if (request == null || request.toDistrictName == null) {
-            throw new GhnApiException("Invalid request: toDistrictName is required");
+        if (request == null) {
+            throw new GhnApiException("Invalid request: body is required");
         }
         FeeResponse response = new FeeResponse();
+        if (request.toDistrictId <= 0) {
+            response.code = 400;
+            response.message = "to_district_id is required";
+            return response;
+        }
         if (request.weightGram <= 0) {
             response.code = 400;
             response.message = "weight must be greater than 0";
@@ -70,7 +78,7 @@ public final class GhnShippingSdk {
             return response;
         }
 
-        boolean hub = HUB_CITIES.contains(request.toDistrictName.toLowerCase(Locale.ROOT));
+        boolean hub = HUB_DISTRICT_IDS.contains(request.toDistrictId);
         int blocks = Math.max(0, (request.weightGram - BLOCK_GRAM + BLOCK_GRAM - 1) / BLOCK_GRAM);
 
         response.code = 200;

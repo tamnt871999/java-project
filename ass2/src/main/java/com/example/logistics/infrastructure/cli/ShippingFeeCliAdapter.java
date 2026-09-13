@@ -2,9 +2,9 @@ package com.example.logistics.infrastructure.cli;
 
 import com.example.logistics.core.domain.CarrierCode;
 import com.example.logistics.core.domain.DomainException;
-import com.example.logistics.core.domain.ShipmentRequest;
-import com.example.logistics.core.domain.ShippingQuote;
 import com.example.logistics.core.factory.CarrierRoutingPolicy;
+import com.example.logistics.core.port.dto.ShipmentRequest;
+import com.example.logistics.core.port.dto.ShippingQuote;
 import com.example.logistics.core.port.in.CalculateShippingFeePort;
 import com.example.logistics.core.port.out.CarrierUnavailableException;
 
@@ -85,7 +85,7 @@ public final class ShippingFeeCliAdapter {
                     + " [" + quote.getCarrier() + "]");
             out.println("  Cuoc phi    : " + money(quote) + " d");
             out.println("  Du kien     : " + quote.getEstimatedDays() + " ngay");
-            out.println("  Ghi chu     : " + quote.getNote());
+            out.println("  Goi dich vu : " + quote.getServiceName());
             out.println();
         } catch (NumberFormatException e) {
             out.println("Trong luong phai la so gram nguyen, vi du: 1200");
@@ -108,7 +108,7 @@ public final class ShippingFeeCliAdapter {
         out.println();
 
         out.printf("%-22s %8s   %-22s %10s %7s   %s%n",
-                "DIEM DEN", "K.LUONG", "NHA VAN CHUYEN", "CUOC PHI", "NGAY", "GHI CHU");
+                "DIEM DEN", "K.LUONG", "NHA VAN CHUYEN", "CUOC PHI", "NGAY", "GOI DICH VU");
         out.println("-".repeat(100));
 
         // Cung mot doan code goi Use Case cho MOI tinh huong - khong he co
@@ -141,7 +141,7 @@ public final class ShippingFeeCliAdapter {
                     quote.getCarrier().partnerName(),
                     money(quote),
                     quote.getEstimatedDays(),
-                    quote.getNote());
+                    quote.getServiceName());
         } catch (CarrierUnavailableException e) {
             out.printf("%-22s %8s   %-22s %s%n",
                     request.getDestination().displayName(),
