@@ -44,18 +44,11 @@ final class OrderJsonMapper {
         return new PlaceOrderCommand(text(body, "customerId"), items);
     }
 
-    /** PlaceOrderResult -> JSON. */
+    /** PlaceOrderResult -> JSON. Dung hai truong nhu buoc 201 Created trong hinh. */
     static Map<String, Object> toJson(PlaceOrderResult result) {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("orderId", result.orderId());
-        json.put("customerId", result.customerId());
-        json.put("status", result.status());
-        json.put("subtotal", result.subtotal());
-        json.put("discount", result.discount());
-        json.put("shippingFee", result.shippingFee());
         json.put("total", result.total());
-        json.put("totalItems", result.totalItems());
-        json.put("placedAt", result.placedAt());
         return json;
     }
 

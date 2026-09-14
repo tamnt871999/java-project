@@ -121,10 +121,6 @@ public class Order {
         return placedAt;
     }
 
-    public int totalItems() {
-        return items.stream().mapToInt(item -> item.quantity().value()).sum();
-    }
-
     @Override
     public boolean equals(Object other) {
         // Entity so sanh theo dinh danh, khong theo thuoc tinh. Don chua duoc

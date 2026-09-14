@@ -23,7 +23,7 @@ Hai bài cố tình dùng hai kiểu kiến trúc khác nhau để so sánh:
 ```bash
 cd ass1
 .\run.ps1 serve          # REST API tai http://localhost:8080
-.\run.ps1 test           # 26 test, gom 5 fitness function canh kien truc
+.\run.ps1 test           # 25 test, gom 5 fitness function canh kien truc
 ```
 
 ```bash

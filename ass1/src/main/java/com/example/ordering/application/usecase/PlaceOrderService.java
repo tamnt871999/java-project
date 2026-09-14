@@ -85,16 +85,6 @@ public class PlaceOrderService implements PlaceOrderUseCase {
     }
 
     private static PlaceOrderResult toResult(Order order) {
-        PriceBreakdown price = order.price();
-        return new PlaceOrderResult(
-                order.id().value(),
-                order.customerId().value(),
-                order.status().name(),
-                price.subtotal().amount(),
-                price.discount().amount(),
-                price.shippingFee().amount(),
-                price.total().amount(),
-                order.totalItems(),
-                order.placedAt().toString());
+        return new PlaceOrderResult(order.id().value(), order.price().total().amount());
     }
 }

@@ -113,10 +113,12 @@ public final class SelfCheck {
         PlaceOrderResult result = fixture.placeOrder("CUS-1", "SKU-A", 3, "129.00");
 
         check("result mang ma don", "ORD-1001", result.orderId());
-        check("result mang trang thai", "PLACED", result.status());
         check("result mang tong tien", new BigDecimal("387.00"), result.total());
-        check("thoi diem dat lay tu Clock duoc tiem", NOW.toString(), result.placedAt());
-        check("kieu tra ve la DTO bien", PlaceOrderResult.class, result.getClass());
+        check("kieu tra ve la DTO bien chu khong phai aggregate",
+                PlaceOrderResult.class, result.getClass());
+        // Sequence diagram ghi Result(orderId, total) - dung hai truong, khong hon.
+        check("DTO tra ve dung hai truong nhu trong hinh",
+                2, PlaceOrderResult.class.getRecordComponents().length);
     }
 
     // --- INTERFACE ADAPTERS ------------------------------------------------
