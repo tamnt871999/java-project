@@ -10,8 +10,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ass2 - Ports and Adapters cho Logistics</name>
-    <description>Tinh phi giao hang GHN / GHTK theo kien truc Hexagonal - khong phu thuoc thu vien ngoai</description>
+    <name>ass2 - Vi dien tu: Anemic to Rich Domain Model</name>
+    <description>Tai cau truc vi dien tu sang Rich Domain Aggregate Root theo DDD va Clean Architecture - khong phu thuoc thu vien ngoai</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -27,7 +27,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.example.logistics.bootstrap.Main</mainClass>
+                            <mainClass>com.example.wallet.bootstrap.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -1,18 +1,14 @@
 <#
     Chay bai tap 2 ma khong can Maven - chi can JDK 21.
 
-      .\run.ps1 build              # bien dich src/main/java vao out/
-      .\run.ps1 demo               # chay bo kich ban mau (mac dinh)
-      .\run.ps1 quote "Ha Noi" 1200   # bao gia mot don hang
-      .\run.ps1 test               # chay bo kiem thu SelfCheck
+      .\run.ps1 demo     # chay bo kich ban mau (mac dinh)
+      .\run.ps1 build    # bien dich src/main/java vao out/
+      .\run.ps1 test     # chay SelfCheck + fitness function kien truc
       .\run.ps1 clean
 #>
 param(
     [Parameter(Position = 0)]
-    [string]$Command = "demo",
-
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$Rest
+    [string]$Command = "demo"
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,11 +16,11 @@ $ErrorActionPreference = "Stop"
 $root       = $PSScriptRoot
 $outDir     = Join-Path $root "out"
 $testOutDir = Join-Path $root "out-test"
-$mainClass  = "com.example.logistics.bootstrap.Main"
-$testClass  = "com.example.logistics.SelfCheck"
+$mainClass  = "com.example.wallet.bootstrap.Main"
+$testClass  = "com.example.wallet.SelfCheck"
 
-# Console Windows mac dinh dung codepage 1258/437 -> ten thanh pho co dau se bi
-# vo. Ep ca console lan JVM ve UTF-8.
+# Console Windows mac dinh dung codepage 1258/437 -> tieng Viet bi vo.
+# Ep ca console lan JVM ve UTF-8.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $javaOpts = @("-Dstdout.encoding=UTF-8", "-Dfile.encoding=UTF-8")
 # Fitness function doc thang ma nguon trong src/main/java de canh luat kien truc,
@@ -55,15 +51,7 @@ function Invoke-BuildTests {
 switch ($Command.ToLower()) {
     "build" { Invoke-Build }
     "demo"  { Invoke-Build; & java @javaOpts -cp $outDir $mainClass }
-    "quote" {
-        if ($Rest.Count -lt 2) {
-            Write-Host 'Cach dung: .\run.ps1 quote "Ha Noi" 1200' -ForegroundColor Yellow
-            exit 2
-        }
-        Invoke-Build
-        & java @javaOpts -cp $outDir $mainClass @Rest
-    }
-    "test" {
+    "test"  {
         Invoke-BuildTests
         & java @testOpts -cp "$outDir;$testOutDir" $testClass
         if ($LASTEXITCODE -ne 0) { throw "Co bai kiem thu that bai" }
@@ -76,7 +64,7 @@ switch ($Command.ToLower()) {
     }
     default {
         Write-Host "Lenh khong hop le: $Command"
-        Write-Host "Cac lenh: build | demo | quote <thanh pho> <gram> | test | clean"
+        Write-Host "Cac lenh: build | demo | test | clean"
         exit 2
     }
 }

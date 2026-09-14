@@ -1,241 +1,220 @@
-# BÀI TẬP 2 — Thiết kế điểm mở rộng Ports & Adapters cho Logistics
+# BÀI TẬP: TÁI CẤU TRÚC VÍ ĐIỆN TỬ TỪ ANEMIC SANG RICH MODEL
 
-Hệ thống tính phí giao hàng cho sàn TMĐT, tích hợp **GiaoHàngNhanh (GHN)** và
-**GiaoHàngTiếtKiệm (GHTK)**, tự động chuyển đổi nhà vận chuyển theo tỉnh thành —
-mà **không** có một dòng `if-else` chọn đối tác nào nằm trong Use Case.
+Chuyển `WalletEntity` — một túi dữ liệu với mọi thuộc tính `public` — thành
+**Rich Domain Aggregate Root** tự bảo vệ luật bất biến của chính nó, đặt trong
+khung **DDD meets Clean Architecture**.
 
 Chạy được chỉ với **JDK 21**, không cần Maven, không có thư viện ngoài.
 
-```bash
-cd D:\Java\ass2
-```
-
 | Lệnh | Tác dụng |
 |---|---|
-| `.\run.ps1 demo` | Chạy bộ kịch bản mẫu (mặc định) |
-| `.\run.ps1 quote "Ha Noi" 1200` | Báo giá một đơn (thành phố + số gram) |
-| `.\run.ps1 test` | Chạy 38 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
+| `.\run.ps1 demo` | Chạy 5 kịch bản cho thấy invariant hoạt động (mặc định) |
+| `.\run.ps1 test` | Chạy 31 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
 | `.\run.ps1 build` / `clean` | Chỉ biên dịch / dọn thư mục build |
 
-Kết quả hiện tại: **38/38 test pass**, trong đó có 3 fitness function canh giữ kiến trúc.
-
 ---
 
-## 1. Đối chiếu với yêu cầu đề bài
-
-| Yêu cầu | Thành phần | File |
-|---|---|---|
-| **a.** Outbound Port `ShippingCarrierPort` | Interface tầng Core, tính phí theo **trọng lượng + thành phố** | `core/port/out/ShippingCarrierPort.java` |
-| **b.** Use Case `CalculateShippingFeeUseCase` nhận Port qua **Constructor Injection** | Điều phối luồng, độc lập công nghệ | `core/usecase/CalculateShippingFeeUseCase.java` |
-| **c.** 2 Adapters: `GhnCarrierAdapter`, `GhtkCarrierAdapter` | Tầng Infrastructure, giả lập gọi API thật | `infrastructure/carrier/ghn/`, `infrastructure/carrier/ghtk/` |
-| **d.** `ShippingCarrierFactory` ở tầng Core | Chọn **strategy** Adapter theo tên thành phố, không lộ chi tiết hạ tầng | `core/factory/ShippingCarrierFactory.java` |
-
----
-
-## 2. Sơ đồ kiến trúc
-
-```
-  INFRASTRUCTURE                 ┌────────────────────────────────────────┐
-  (driving side)                 │          APPLICATION CORE              │
-                                 │                                        │
-  ShippingFeeCliAdapter ────────►│  CalculateShippingFeePort (inbound)    │
-      (in/cli)                   │             ▲                          │
-                                 │             │ implements               │
-                                 │  CalculateShippingFeeUseCase           │
-                                 │             │ dùng                     │
-                                 │  ShippingCarrierProvider   (interface) │
-                                 │             ▲                          │
-                                 │             │ implements               │
-                                 │  ShippingCarrierFactory ──► CarrierRoutingPolicy
-                                 │             │ trả về                   │
-                                 │  ShippingCarrierPort      (outbound)   │
-                                 │             ▲                          │
-                                 └─────────────┼──────────────────────────┘
-                                               │ implements
-  INFRASTRUCTURE                 ┌─────────────┴──────────────────────────┐
-  (driven side)                  │  GhnCarrierAdapter ──► GhnShippingSdk  │
-                                 │  GhtkCarrierAdapter ─► GhtkRestClient  │
-                                 └────────────────────────────────────────┘
-
-         BOOTSTRAP — Main.java chỉ LẮP RÁP, không chứa nghiệp vụ lẫn trình bày.
-
-       Mũi tên phụ thuộc LUÔN hướng từ ngoài vào trong (Dependency Inversion).
-```
-
-**Hai loại adapter, dễ lẫn nhau:**
-
-| | Vai trò | Cắm vào | File |
-|---|---|---|---|
-| **Driving** (inbound) | người dùng gọi **vào** lõi | `CalculateShippingFeePort` | `infrastructure/cli/ShippingFeeCliAdapter` |
-| **Driven** (outbound) | lõi gọi **ra** thế giới ngoài | `ShippingCarrierPort` | `infrastructure/carrier/ghn`, `.../ghtk` |
-
-### Luật kiến trúc được THỰC THI, không chỉ được ghi chép
-
-`.\run.ps1 test` chạy 3 **fitness function** (bài test canh giữ kiến trúc) đọc thẳng
-mã nguồn trong `src/main/java` và fail build nếu có file vượt ranh giới:
-
-```
-[OK]   core khong phu thuoc infrastructure / bootstrap
-[OK]   core/domain khong phu thuoc port / usecase / factory
-[OK]   core khong dinh cong nghe ha tang (net / sql / io / spring / json)
-```
-
-Đã kiểm chứng là bẫy thật: cố tình thêm `import ...infrastructure.ghn.GhnCarrierAdapter`
-vào Use Case → build fail, báo đúng `CalculateShippingFeeUseCase.java:12`.
-
-Kiểm chứng thủ công tương đương:
-
-```bash
-grep -r "import com.example.logistics.infrastructure" src/main/java/com/example/logistics/core
-```
-
-Kết quả: rỗng. Mạnh hơn nữa — compile riêng 14 file của `core/` mà **không** kèm
-một file infrastructure nào: `javac` exit code 0, lõi tự đứng được.
-
----
-
-## 3. Điểm thiết kế đáng chú ý
-
-### a. Port định nghĩa hợp đồng bằng ngôn ngữ của lõi
-
-`ShippingCarrierPort` chỉ dùng `ShipmentRequest` / `ShippingQuote` — không có
-`HttpClient`, không có JSON, không có token, không có kiểu dữ liệu nào của SDK
-đối tác. Interface nằm ở **Core**, còn bản hiện thực nằm ở **Infrastructure**:
-đây chính là **Dependency Inversion** (đảo ngược phụ thuộc).
-
-### b. Use Case sạch khỏi if-else
-
-Nhìn phần `import` của `CalculateShippingFeeUseCase`: không có `GhnCarrierAdapter`,
-không có `GhtkCarrierAdapter`. Nếu viết trực tiếp:
+## 1. Vấn đề của mã nguồn ban đầu
 
 ```java
-// VI PHẠM OCP — mỗi lần ký hợp đồng với đối tác mới lại phải mở Use Case ra sửa
-if (city.equals("Ha Noi")) { new GhnSdk().fee(...); }
-else                       { new GhtkClient().fee(...); }
+public class WalletEntity {
+    public UUID id;
+    public BigDecimal balance;    // ai cũng sửa được
+    public String status;         // ai cũng sửa được
+}
+
+public class WalletService {
+    public void withdraw(WalletEntity wallet, BigDecimal amount) throws Exception {
+        if ("LOCKED".equals(wallet.status)) throw new Exception("Ví điện tử hiện đang bị khóa!");
+        // LỖI CHÍ MẠNG: thiếu kiểm tra số dư
+        wallet.balance = wallet.balance.subtract(amount);
+    }
+}
 ```
 
-thì mỗi lần thêm đối tác là một lần có nguy cơ làm hỏng luồng đặt hàng đang chạy
-ổn định. Ở đây: việc **chọn** đối tác đẩy ra `ShippingCarrierFactory`, việc **gọi**
-đối tác đẩy ra Adapter.
+`WalletEntity` không biết gì về chính nó — mọi luật nằm bên ngoài ở `WalletService`.
+Hậu quả không phải lý thuyết:
 
-### c. Adapter là nơi duy nhất chứa phần "bẩn"
+1. **Luật "không được rút quá số dư" bị quên, và không có gì nhắc.** Ví tụt xuống
+   âm mà chương trình vẫn chạy bình thường.
+2. **Dù có sửa `WalletService` cho đúng thì vẫn chưa an toàn.** Bất kỳ đoạn code
+   nào khác trong hệ thống vẫn viết được `wallet.balance = ...` để đi vòng qua
+   luật đó. Sửa một chỗ không làm hệ thống an toàn.
+3. `status` là `String` với ghi chú `// "ACTIVE", "LOCKED"`. Ghi chú không phải
+   ràng buộc: gán `"Locked"` thì `"LOCKED".equals(status)` trả `false` — **khóa
+   mất tác dụng mà không báo lỗi**.
 
-Hai đối tác có phong cách hoàn toàn khác nhau, và toàn bộ chênh lệch đó bị chặn
-lại ở tầng Infrastructure:
-
-| | GHN | GHTK |
-|---|---|---|
-| Giao tiếp | SDK Java (object) | HTTP REST (chuỗi JSON thô) |
-| Định danh địa bàn | `district_id` — **số** (`1854`) | tên tỉnh tiếng Việt **có dấu** (`"Nghệ An"`) |
-| Trọng lượng | gram (`int`) | kilogram (`double`) |
-| Tiền | VND (`int`) | **nghìn đồng** (`int`) |
-| Thời gian | số ngày | số **giờ** |
-| Báo lỗi | trường `code` trong body | ném exception |
-
-**Bảng ánh xạ địa chỉ là tài sản riêng của từng Adapter.** Cùng một tỉnh, GHN gọi
-là `1854` còn GHTK đòi `"Nghệ An"`. Nếu nhét cả hai vào `City` thì Domain phải
-phình thêm một trường cho **mỗi** đối tác ký hợp đồng — tức là ký thêm đối tác lại
-phải sửa tầng trong cùng, đúng điều kiến trúc này muốn tránh. Để ở adapter thì
-Domain chỉ giữ duy nhất khóa chuẩn hóa không dấu (`"nghe an"`), mỗi adapter tự dịch
-sang định dạng đối tác của nó đòi hỏi.
-
-Adapter dịch hết về `ShippingQuote`, nên Use Case chỉ phải hiểu **một** dạng kết
-quả duy nhất. Ngoại lệ riêng của hạ tầng (`GhnApiException`, `GhtkApiException`)
-cũng được dịch sang `CarrierUnavailableException` của Core — nếu không, chi tiết
-công nghệ sẽ rò rỉ vào lõi qua đường `throws`.
-
-**Trường `serviceName` thay cho `note`.** Bản trước có trường `note` nhận chuỗi tự
-do do Adapter ghép sẵn, kiểu `"GHTK Tiet Kiem (72h)"`. Đó là một **lỗi ranh giới**:
-phần `(72h)` thực chất là cách *trình bày* lại thông tin mà `estimatedDays` đã mang,
-nên lõi vô tình chứa sẵn một mảnh giao diện. Nay đổi tên thành `serviceName` (tên
-gói dịch vụ — một dữ kiện nghiệp vụ thật, là căn cứ khi đối soát cước), bắt buộc
-không rỗng, và GHTK bóc nó ra từ payload JSON thay vì ghép chuỗi bằng tay.
-
-### d. Factory ở Core mà vẫn không biết Infrastructure là ai
-
-Đây là chỗ dễ làm sai nhất của đề bài. Nếu Factory tự `new GhnCarrierAdapter()`
-thì package `core` buộc phải `import` package `infrastructure`, và toàn bộ kiến
-trúc Hexagonal sụp đổ ngay tại dòng import đó.
-
-Cách giải quyết ở đây:
-
-1. Các Adapter được **tiêm vào** Factory qua constructor từ Composition Root (`Main`).
-2. Factory chỉ giữ một bảng tra `CarrierCode → ShippingCarrierPort` — cả hai kiểu
-   này đều thuộc về Core.
-3. Luật "thành phố nào thì đối tác nào" tách hẳn sang `CarrierRoutingPolicy`,
-   vì đó là **quyết định kinh doanh**, dễ thay đổi nhất.
-
-Ranh giới cần phân biệt: `"GHN"` là tên **đối tác kinh doanh** — lõi được phép
-biết mình đang làm việc với ai. Cái lõi **không** được biết là đối tác đó gọi
-bằng SDK, REST hay SOAP.
-
-Thêm một tầng nữa: Use Case **không** phụ thuộc thẳng class `ShippingCarrierFactory`
-mà phụ thuộc interface `ShippingCarrierProvider`. Factory chỉ là **một** chiến lược
-chọn hãng (tra bảng theo tỉnh/thành). Khi kinh doanh yêu cầu chiến lược khác, ta
-viết implementation mới chứ không mở file đang chạy ổn định ra sửa.
-
-Test `doiChienLuocChonHangMaKhongSuaUseCase()` chứng minh bằng tình huống thật:
-GHTK từ chối kiện trên 20kg, nên đơn 25kg đi Sơn La báo giá thất bại. Thêm
-`HeavyParcelCarrierProvider` (kiện nặng → đẩy sang GHN, còn lại ủy quyền cho
-Factory) là xử lý được, **không sửa** Use Case, Factory, Port hay 2 Adapter.
-
-### e. `CarrierCode` là value object, không phải `enum`
-
-`enum` là danh sách đóng: thêm đối tác thứ ba buộc phải **sửa** file enum — đúng
-vào chỗ mà OCP cấm sửa. Với value object, thêm ViettelPost = thêm **một** file
-adapter mới + **một** dòng đăng ký ở `Main`, không động vào bất kỳ file cũ nào.
-
-Bài test `themDoiTacMoiMaKhongSuaCodeCu()` trong `SelfCheck.java` chứng minh điều
-này: định tuyến Huế sang VTP mà Factory, Use Case, Port đều giữ nguyên.
-
-### f. Quy ước đặt tên accessor (đồng bộ với ass1)
-
-| Loại | Kiểu | Accessor |
-|---|---|---|
-| Value object | `Money`, `Weight`, `City`, `CarrierCode` | ngắn — `amount()`, `grams()`, `key()`, `value()` |
-| Model / DTO | `ShipmentRequest`, `ShippingQuote` | JavaBean — `getDestination()`, `getFee()` |
-| Interface dịch vụ | `ShippingCarrierPort` | động từ / truy vấn — `carrier()`, `calculateFee()` |
-
-Toàn bộ dùng class `private final` + validate trong constructor, **không** dùng
-`record`, giống hệt `Money` / `OrderLine` / `PlaceOrderRequest` của ass1.
-
-### g. City được chuẩn hóa trước khi định tuyến
-
-`"TP. Hồ Chí Minh"`, `"ho chi minh"`, `"HCM"`, `"Sài Gòn"` đều ra cùng một khóa
-`"ho chi minh"`. Nếu so sánh chuỗi thô bằng `equals()`, luật định tuyến sẽ sai
-ngay ở ký tự hoa/thường đầu tiên.
+Đó chính là **anemic domain model**: dữ liệu một nơi, hành vi một nơi khác.
 
 ---
 
-## 4. Luật định tuyến mặc định
+## 2. Đối chiếu với yêu cầu đề bài
 
-| Tỉnh / thành | Nhà vận chuyển | Lý do |
+| Yêu cầu | Cách giải | File |
 |---|---|---|
-| Hà Nội, Hồ Chí Minh, Đà Nẵng, Hải Phòng, Cần Thơ | **GHN** | Có hub trung chuyển, giao trong ngày |
-| Còn lại (fallback) | **GHTK** | Tối ưu chi phí cho tỉnh lẻ |
+| **a.** Aggregate Root, `balance`/`status` về `private`, xoá mọi setter công khai | `Wallet` chỉ đổi trạng thái qua method nghiệp vụ; không còn một setter nào | [`domain/Wallet.java`](src/main/java/com/example/wallet/domain/Wallet.java) |
+| **b.** Phương thức giàu hành vi `withdrawMoney(BigDecimal)` và `lockWallet()` | Đúng chữ ký đề bài, đặt tên theo nghiệp vụ chứ không theo kỹ thuật | [`domain/Wallet.java`](src/main/java/com/example/wallet/domain/Wallet.java) |
+| **c.** Invariant + `DomainException` tự định nghĩa | Ví khóa không rút được; không rút quá số dư; số tiền phải > 0 | [`domain/DomainException.java`](src/main/java/com/example/wallet/domain/DomainException.java) |
 
-Bảng luật được **truyền vào** chứ không hard-code trong thân hàm, nên đổi chính
-sách chỉ là sửa dữ liệu ở Composition Root (hoặc nạp từ file cấu hình), không
-phải sửa logic:
+### Yêu cầu a — đóng gói
 
 ```java
-CarrierRoutingPolicy policy = CarrierRoutingPolicy.builder()
-        .route("Ha Noi", CarrierCode.GHN)
-        .route("Hue", CarrierCode.of("VTP", "ViettelPost"))
-        .fallback(CarrierCode.GHTK)
-        .build();
+public class Wallet {
+    private final WalletId id;
+    private Money balance;        // private
+    private WalletStatus status;  // private
+    // KHÔNG có setBalance, KHÔNG có setStatus
+}
 ```
+
+Được canh bằng test dùng **reflection** chứ không đọc bằng mắt — một setter được
+thêm lại sau này sẽ làm build đỏ ngay:
+
+```
+[OK]   Wallet khong co setter cong khai
+[OK]   truong 'balance' la private
+[OK]   truong 'status' la private
+```
+
+### Yêu cầu b — phương thức giàu hành vi
+
+So sánh `wallet.setBalance(x)` với `wallet.withdrawMoney(x)`: tên thứ hai nói rõ
+điều gì đang xảy ra, **và vì thế mới có chỗ để gắn luật vào**. Một setter thì
+không có chỗ nào hợp lý để đặt câu hỏi "có được phép không".
+
+### Yêu cầu c — invariant
+
+```java
+public void withdrawMoney(BigDecimal amount) {
+    Money requested = new Money(amount);                  // chặn null / số âm
+    if (requested.isZero())    throw new DomainException("So tien rut phai lon hon 0");
+    if (status.isLocked())     throw new DomainException("Vi dien tu hien dang bi khoa...");
+    if (!balance.isAtLeast(requested))
+        throw new DomainException("So du khong du: can ... nhung chi con ...");
+    this.balance = balance.minus(requested);
+}
+```
+
+Thứ tự kiểm tra có chủ ý: **số tiền hợp lệ** (lỗi cú pháp của lệnh gọi, không
+liên quan trạng thái ví) → **ví có bị khóa** → **số dư có đủ**.
+
+Vì luật nằm *trong* aggregate, không còn đường nào lách được. Dù có bao nhiêu use
+case mới viết sau này, ví cũng không thể âm.
 
 ---
 
-## 5. Cách thêm đối tác thứ ba (kiểm chứng OCP)
+## 3. Bằng chứng: chạy cùng một kịch bản qua bản cũ và bản mới
 
-1. Viết `infrastructure/carrier/vtp/VtpCarrierAdapter implements ShippingCarrierPort`.
-2. Thêm một dòng ở `Main`: `new VtpCarrierAdapter(...)` vào danh sách đăng ký.
-3. Thêm một dòng `.route(...)` vào `CarrierRoutingPolicy` nếu cần luật riêng.
+Mã nguồn cũ được giữ nguyên văn trong [`src/test/java/.../legacy/`](src/test/java/com/example/wallet/legacy/LegacyWalletCode.java)
+— để ở thư mục test chứ không phải `src/main/java`, vì nó là tang vật đối chiếu,
+không phải một phần của hệ thống.
 
-Không sửa `ShippingCarrierPort`, không sửa `CalculateShippingFeeUseCase`, không
-sửa `ShippingCarrierFactory`, không sửa hai adapter cũ.
+Test `luatBatBienChanDuocLoiCuaBanCu()` rút **5000** từ ví có **1000**:
+
+```
+[OK]   ban cu cho so du tut xuong am        <- legacy.balance == -4000.00, không lỗi
+[OK]   ban moi chan dung kich ban do        <- DomainException
+[OK]   ban moi giu so du nguyen ven         <- balance vẫn 1000.00
+```
+
+Dòng đầu là một test **khẳng định bản cũ có bug** — nếu ai đó "sửa" mã legacy thì
+test này đỏ, nhắc rằng tang vật đã bị động vào.
+
+---
+
+## 4. DDD meets Clean Architecture
+
+```
+   ┌──────────────────────────────────────────────────────────────┐
+   │ Vòng 3 — ADAPTER            InMemoryWalletRepository         │
+   │   ┌──────────────────────────────────────────────────────┐   │
+   │   │ Vòng 2 — APPLICATION                                 │   │
+   │   │   port/in   WithdrawMoneyUseCase, LockWalletUseCase   │  │
+   │   │   usecase   WithdrawMoneyService, LockWalletService   │  │
+   │   │   port/out  WalletRepository ◄── adapter hiện thực    │  │
+   │   │   ┌──────────────────────────────────────────────┐   │   │
+   │   │   │ Vòng 1 — DOMAIN                              │   │   │
+   │   │   │   Wallet (Aggregate Root)                    │   │   │
+   │   │   │   Money, WalletId (Value Object)             │   │   │
+   │   │   │   WalletStatus, DomainException              │   │   │
+   │   │   └──────────────────────────────────────────────┘   │   │
+   │   └──────────────────────────────────────────────────────┘   │
+   └──────────────────────────────────────────────────────────────┘
+
+        BOOTSTRAP — Main.java chỉ LẮP RÁP, không chứa nghiệp vụ.
+
+    THE DEPENDENCY RULE: vòng trong không biết gì về vòng ngoài.
+```
+
+Bài này **không có vòng `infrastructure` riêng** vì không dùng framework nào —
+thêm một package rỗng chỉ để cho đủ bốn vòng là hình thức.
+
+**Kiểm chứng bằng compiler**, mạnh hơn mọi lời cam kết trong tài liệu:
+
+| Compile riêng | Số file | Kết quả |
+|---|---|---|
+| `domain/` một mình | 5 | `javac` exit 0 |
+| `domain/` + `application/` | 14 | `javac` exit 0 |
+
+Vòng trong dịch được mà không cần một dòng nào của vòng ngoài.
+
+### Hai khái niệm DDD được dùng ở đây
+
+**Aggregate Root** — `Wallet` là cửa duy nhất vào cụm dữ liệu của nó. Không ai
+chạm được `balance` từ bên ngoài, nên aggregate luôn ở trạng thái hợp lệ.
+
+**Value Object** — `Money` và `WalletId`. Chỉ bọc những thứ **mang theo luật**:
+`Money` giữ luật "tiền không được âm" ở đúng một chỗ. `balance` vì thế không thể
+là một `BigDecimal` âm ngay từ kiểu dữ liệu.
+
+> `withdrawMoney` vẫn nhận `BigDecimal` đúng như đề bài quy định — việc bọc thành
+> `Money` là chuyện riêng bên trong, tầng ngoài không phải biết Value Object của
+> domain mới gọi được.
+
+### Use case sau khi nghiệp vụ dọn về aggregate
+
+```java
+// CŨ — service vừa điều phối vừa phân xử nghiệp vụ
+if ("LOCKED".equals(wallet.status)) throw new Exception("...");
+wallet.balance = wallet.balance.subtract(amount);
+
+// MỚI — service chỉ điều phối
+wallet.withdrawMoney(command.amount());
+```
+
+`WithdrawMoneyService` chỉ còn làm ba việc không mang tính nghiệp vụ: **tìm** ví,
+**bảo** ví tự rút tiền, **lưu** lại. Không còn lấy một câu `if` nào về nghiệp vụ
+— đó chính là dấu hiệu của một rich domain model đúng nghĩa.
+
+### Hai loại lỗi được tách bạch
+
+| Tình huống | Ngoại lệ | Vì sao |
+|---|---|---|
+| Ví bị khóa, số dư không đủ, số tiền ≤ 0 | `DomainException` | Luật nghiệp vụ bị vi phạm |
+| Không tìm thấy ví | `WalletNotFoundException` | Không luật nào bị vi phạm — đầu vào trỏ tới thứ không tồn tại |
+
+Gộp hai loại lại thì tầng ngoài mất khả năng phân biệt "dữ liệu sai" (thường là
+404) với "thao tác bị nghiệp vụ từ chối" (thường là 409 / 422).
+
+`DomainException` là **unchecked**, khác bản cũ dùng `throws Exception`: checked
+exception buộc mọi hàm gọi phải `throws` theo, kéo chuỗi ngoại lệ lan từ domain
+ra tận controller — đúng thứ Clean Architecture muốn chặn.
+
+---
+
+## 5. Fitness function canh giữ kiến trúc
+
+Luật viết trong tài liệu thì không ai bắt buộc phải đọc. 5 bài test trong
+[`ArchitectureFitness`](src/test/java/com/example/wallet/ArchitectureFitness.java)
+đọc thẳng mã nguồn và **fail build** nếu có file vượt ranh giới:
+
+```
+[OK]   tang 'domain' khong phu thuoc ...application, ...adapter, ...bootstrap
+[OK]   tang 'application' khong phu thuoc ...adapter, ...bootstrap
+[OK]   tang 'domain' khong dinh cong nghe ha tang (spring, jakarta, javax, sql, net, io)
+[OK]   tang 'application' khong dinh cong nghe ha tang
+[OK]   tang 'adapter' khong phu thuoc ...bootstrap
+```
 
 ---
 
@@ -246,56 +225,57 @@ ass2/
 ├── pom.xml
 ├── run.ps1
 └── src/
-    ├── main/java/com/example/logistics/
-    │   ├── core/                              ← TẦNG APPLICATION CORE
-    │   │   ├── domain/                        CHỈ value object thuần:
-    │   │   │                                  CarrierCode, City, Money, Weight
-    │   │   ├── port/dto/ShipmentRequest.java   (DTO biên — hợp đồng dữ liệu)
-    │   │   ├── port/dto/ShippingQuote.java     (DTO biên)
-    │   │   ├── port/in/CalculateShippingFeePort.java
-    │   │   ├── port/out/ShippingCarrierPort.java          ← yêu cầu a
-    │   │   ├── port/out/CarrierUnavailableException.java
-    │   │   ├── factory/ShippingCarrierProvider.java       (interface chiến lược)
-    │   │   ├── factory/CarrierRoutingPolicy.java
-    │   │   ├── factory/ShippingCarrierFactory.java        ← yêu cầu d
-    │   │   └── usecase/CalculateShippingFeeUseCase.java   ← yêu cầu b
-    │   ├── infrastructure/                    ← TẦNG INFRASTRUCTURE
-    │   │   ├── carrier/ghn/   GhnShippingSdk, GhnCarrierAdapter   ← yêu cầu c
-    │   │   ├── carrier/ghtk/  GhtkRestClient, GhtkCarrierAdapter  ← yêu cầu c
-    │   │   └── cli/ShippingFeeCliAdapter.java  (driving adapter)
-    │   └── bootstrap/Main.java                ← COMPOSITION ROOT (chỉ lắp ráp)
-    └── test/java/com/example/logistics/
-        ├── SelfCheck.java                     (35 test nghiệp vụ)
-        └── ArchitectureFitness.java           (3 fitness function)
+    ├── main/java/com/example/wallet/
+    │   ├── domain/                       ← VÒNG 1 (Entities)
+    │   │   ├── Wallet.java                  Aggregate Root — yêu cầu a, b, c
+    │   │   ├── Money.java                   Value Object — luật "tiền không âm"
+    │   │   ├── WalletId.java                Value Object định danh
+    │   │   ├── WalletStatus.java            enum thay cho String
+    │   │   └── DomainException.java         yêu cầu c
+    │   ├── application/                  ← VÒNG 2 (Use Cases)
+    │   │   ├── port/in/                     WithdrawMoneyUseCase, LockWalletUseCase,
+    │   │   │                                WithdrawMoneyCommand, WalletSnapshot
+    │   │   ├── port/out/WalletRepository.java
+    │   │   └── usecase/                     WithdrawMoneyService, LockWalletService,
+    │   │                                    WalletNotFoundException, WalletSnapshots
+    │   ├── adapter/out/persistence/      ← VÒNG 3 (Interface Adapters)
+    │   │   └── InMemoryWalletRepository.java
+    │   └── bootstrap/Main.java           ← COMPOSITION ROOT (chỉ lắp ráp)
+    └── test/java/com/example/wallet/
+        ├── SelfCheck.java                   26 test nghiệp vụ
+        ├── ArchitectureFitness.java         5 fitness function
+        └── legacy/LegacyWalletCode.java     mã cũ, chỉ để đối chiếu
 ```
-
-`domain/` chỉ còn value object — thứ ổn định nhất, thay đổi chậm nhất. DTO biên
-(`ShipmentRequest`, `ShippingQuote`) nằm ở `port/dto` vì chúng là **hợp đồng dữ
-liệu tại ranh giới** do Use Case định nghĩa, không phải khái niệm nghiệp vụ tồn
-tại độc lập. Để chung với domain thì sớm muộn nhu cầu của tầng web sẽ bò ngược vào
-tầng trong cùng — một ngày đẹp trời có người thêm `@JsonProperty` hoặc một trường
-chỉ để hiển thị vào đó, và entity bị kéo theo nhịp thay đổi của REST API.
 
 ---
 
 ## 7. Kết quả chạy `.\run.ps1 demo`
 
 ```
-DIEM DEN                K.LUONG   NHA VAN CHUYEN           CUOC PHI    NGAY   GOI DICH VU
--------------------------------------------------------------------------------------
-Ha Noi                     800g   GiaoHangNhanh              27,000       1   GHN Standard
-TP. Ho Chi Minh           1200g   GiaoHangNhanh              32,000       1   GHN Standard
-hcm                       1200g   GiaoHangNhanh              32,000       1   GHN Standard
-Đà Nẵng                   2500g   GiaoHangNhanh              42,000       1   GHN Standard
-Nghe An                    800g   GiaoHangTietKiem           26,000       3   GHTK Tiet Kiem
-Ca Mau                    3000g   GiaoHangTietKiem           42,000       3   GHTK Tiet Kiem
-Binh Duong                5000g   GiaoHangTietKiem           48,000       2   GHTK Tiet Kiem
-Son La                   25000g   GHTK                   TU CHOI - GHTK khong nhan kien hang tren 20kg
+=== VI DIEN TU: ANEMIC -> RICH DOMAIN MODEL ===
+
+Vi 625cbc5f-8f3c-46a8-8e02-13a50cbf8a21 mo voi so du 1000.00
+
+  Rut 300.00                   OK      so du = 700.00, trang thai = ACTIVE
+  Rut 5000.00 (qua so du)      TU CHOI So du khong du: can 5000.00 nhung chi con 700.00
+  Rut -100.00 (so am)          TU CHOI So tien khong duoc am: -100.00
+  Khoa vi                      OK      so du = 700.00, trang thai = LOCKED
+  Rut 100.00 sau khi khoa      TU CHOI Vi dien tu hien dang bi khoa, khong the rut tien
 ```
 
-Cùng một đoạn code gọi Use Case cho mọi dòng ở trên — nhà vận chuyển tự đổi khi
-điểm đến đổi.
+Cả ba lần bị từ chối đều do chính aggregate `Wallet` phân xử, không phải do use
+case kiểm tra hộ.
 
-> Công thức giá của GHN/GHTK trong bài là **giả lập** (deterministic, không gọi
-> mạng) để kiểm thử chạy được offline; điểm cần đánh giá là ranh giới kiến trúc,
-> không phải biểu giá thật của hai đối tác.
+---
+
+## 8. Hai quyết định thiết kế có thể bàn
+
+**`lockWallet()` cố ý KHÔNG idempotent** — khóa một ví đã khóa sẽ ném
+`DomainException`. Lý do: gọi hai lần thường là dấu hiệu logic gọi đang sai (hai
+luồng cùng xử lý một sự cố), và aggregate nói thẳng ra thay vì im lặng nuốt đi.
+Nếu nghiệp vụ thực tế muốn idempotent thì bỏ câu `if` đầu tiên trong `lockWallet()`.
+
+**Aggregate khả biến (mutable)** — `withdrawMoney` đổi trạng thái tại chỗ và trả
+về `void`, đúng chữ ký đề bài yêu cầu. Aggregate khả biến là cách làm kinh điển
+của DDD; điểm mấu chốt không phải bất biến hay khả biến, mà là **mọi thay đổi đều
+phải đi qua một method có kiểm tra luật**.
