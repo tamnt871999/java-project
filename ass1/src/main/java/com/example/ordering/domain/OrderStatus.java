@@ -1,20 +1,14 @@
 package com.example.ordering.domain;
 
-/** Vong doi don hang: NEW -> PAID hoac NEW -> CANCELLED. */
+/**
+ * Trang thai don hang.
+ *
+ * Sequence diagram cua bai nay dung o buoc dat hang, nen vong doi hien chi co
+ * mot trang thai. Van tach thanh enum thay vi dung String de trang thai luon
+ * la mot gia tri hop le, va de them PAID / CANCELLED sau nay ma khong phai sua
+ * kieu du lieu o moi tang.
+ */
 public enum OrderStatus {
 
-    NEW("Cho thanh toan"),
-    PAID("Da thanh toan"),
-    CANCELLED("Da huy");
-
-    private final String label;
-
-    OrderStatus(String label) {
-        this.label = label;
-    }
-
-    /** Nhan tieng Viet de View hien thi thang, khong phai tu map lai. */
-    public String label() {
-        return label;
-    }
+    PLACED
 }

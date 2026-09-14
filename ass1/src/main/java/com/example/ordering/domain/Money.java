@@ -5,12 +5,16 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
- * MODEL - gia tri tien te.
+ * VALUE OBJECT tien te - bat bien, so sanh theo gia tri.
  *
- * Dung BigDecimal chu khong dung double: 0.1 + 0.2 voi double se ra
- * 0.30000000000000004, sai so nay khong chap nhan duoc voi tien.
+ * Khong bao gio dung double cho tien: 0.1 + 0.2 voi double ra
+ * 0.30000000000000004. Moi phep tinh deu qua BigDecimal, lam tron 2 chu so.
+ *
+ * Luu y: toString() tra ve chuoi KY THUAT ("1234.50"), khong them ky hieu tien
+ * te hay dau phan cach. Dinh dang hien thi phu thuoc ngon ngu va vung mien cua
+ * nguoi xem nen thuoc ve client, khong thuoc ve Entities.
  */
-public class Money implements Comparable<Money> {
+public final class Money implements Comparable<Money> {
 
     public static final Money ZERO = new Money(BigDecimal.ZERO);
 
@@ -18,6 +22,9 @@ public class Money implements Comparable<Money> {
 
     public Money(BigDecimal amount) {
         Objects.requireNonNull(amount, "amount must not be null");
+        if (amount.signum() < 0) {
+            throw new DomainException("So tien khong duoc am: " + amount);
+        }
         this.amount = amount.setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -57,7 +64,7 @@ public class Money implements Comparable<Money> {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof Money m && amount.compareTo(m.amount) == 0;
+        return other instanceof Money money && amount.compareTo(money.amount) == 0;
     }
 
     @Override
@@ -65,13 +72,6 @@ public class Money implements Comparable<Money> {
         return amount.stripTrailingZeros().hashCode();
     }
 
-    /**
-     * Chuoi ky thuat thuan tuy: 1234.5 -> "1234.50".
-     *
-     * Domain KHONG dinh dang tien de hien thi (khong them $, khong them dau
-     * phay ngan cach). Viec do phu thuoc ngon ngu va vung mien cua nguoi xem,
-     * nen thuoc ve client hoac tang adapter, khong thuoc ve Model.
-     */
     @Override
     public String toString() {
         return amount.toPlainString();

@@ -10,8 +10,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ass1 - Place Order REST API</name>
-    <description>REST API dat hang - 3 package: domain, application, adapter</description>
+    <name>ass1 - Place Order (Clean Architecture)</name>
+    <description>REST API dat hang theo Clean Architecture: domain, application, adapter, infrastructure</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -27,7 +27,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.example.ordering.adapter.Main</mainClass>
+                            <mainClass>com.example.ordering.bootstrap.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

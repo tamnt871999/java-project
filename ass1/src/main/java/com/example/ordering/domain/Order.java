@@ -1,134 +1,125 @@
 package com.example.ordering.domain;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * MODEL trung tam cua ung dung.
+ * AGGREGATE ROOT - vong trong cung cua Clean Architecture.
  *
- * Trong MVC/layered, Model giu DU LIEU va cac phep tinh gan lien voi du lieu
- * do (subtotal, total). Con CHINH SACH kinh doanh - giam gia bao nhieu, khi nao
- * mien phi ship - nam o tang Service (xem OrderService.calculatePricing).
+ * Khong import Spring, khong import JPA, khong import Jackson. Doi framework
+ * hay doi database deu khong cham toi file nay - do chinh la muc dich cua
+ * Dependency Rule.
  *
- * Day la diem khac ro nhat so voi ban Hexagonal, noi moi quy tac deu bi don
- * vao trong aggregate. Ca hai cach deu dung, mien la ban BIET minh chon gi.
+ * Moi thay doi trang thai deu di qua method co nghia nghiep vu (place, cancel),
+ * khong co setter cong khai. Aggregate tu bao ve invariant cua chinh no.
  */
 public class Order {
 
-    private final String id;
-    private final String customerId;
-    private final String customerName;
-    private final String shippingAddress;
-    private final List<OrderLine> lines = new ArrayList<>();
-    private final LocalDateTime createdAt;
+    private final OrderId id;
+    private final CustomerId customerId;
+    private final List<OrderItem> items;
+    private final PriceBreakdown price;
+    private final Instant placedAt;
+    private final OrderStatus status;
 
-    private OrderStatus status = OrderStatus.NEW;
-    private Money discount = Money.ZERO;
-    private Money shippingFee = Money.ZERO;
-    private String note;
-
-    public Order(String id, String customerId, String customerName,
-                 String shippingAddress, LocalDateTime createdAt) {
-        this.id = Objects.requireNonNull(id, "id must not be null");
-        this.customerId = Objects.requireNonNull(customerId, "customerId must not be null");
-        this.customerName = Objects.requireNonNull(customerName, "customerName must not be null");
-        this.shippingAddress = Objects.requireNonNull(shippingAddress, "shippingAddress must not be null");
-        this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
+    private Order(OrderId id, CustomerId customerId, List<OrderItem> items,
+                  PriceBreakdown price, OrderStatus status, Instant placedAt) {
+        this.id = id;
+        this.customerId = customerId;
+        this.items = List.copyOf(items);
+        this.price = price;
+        this.status = status;
+        this.placedAt = placedAt;
     }
 
-    public void addLine(OrderLine line) {
-        Objects.requireNonNull(line, "line must not be null");
-        boolean duplicated = lines.stream()
-                .anyMatch(existing -> existing.getProductId().equals(line.getProductId()));
-        if (duplicated) {
-            throw new DomainException("San pham da co trong don hang: " + line.getProductName());
+    /**
+     * FACTORY METHOD: dat mot don hang moi.
+     *
+     * Toan bo dinh nghia "the nao la mot don hang hop le" nam o day - khong nam
+     * o Use Case va cang khong nam o Controller.
+     */
+    public static Order place(OrderId id, CustomerId customerId, List<OrderItem> items,
+                              PriceBreakdown price, Instant placedAt) {
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(customerId, "customerId must not be null");
+        Objects.requireNonNull(items, "items must not be null");
+        Objects.requireNonNull(price, "price must not be null");
+        Objects.requireNonNull(placedAt, "placedAt must not be null");
+
+        if (items.isEmpty()) {
+            throw new DomainException("Don hang phai co it nhat mot dong hang");
         }
-        lines.add(line);
+        requireNoDuplicateProduct(items);
+
+        return new Order(id, customerId, items, price, OrderStatus.PLACED, placedAt);
     }
 
-    /** Service goi vao sau khi tinh xong chinh sach gia. */
-    public void applyPricing(Money discount, Money shippingFee) {
-        this.discount = Objects.requireNonNull(discount, "discount must not be null");
-        this.shippingFee = Objects.requireNonNull(shippingFee, "shippingFee must not be null");
+    /**
+     * Dung lai aggregate tu du lieu da luu.
+     *
+     * Tach rieng khoi place() de viec khoi phuc khong chay lai quy tac cua viec
+     * tao moi - gia da chot hom qua khong bi tinh lai theo chinh sach hom nay.
+     */
+    public static Order rehydrate(OrderId id, CustomerId customerId, List<OrderItem> items,
+                                  PriceBreakdown price, OrderStatus status, Instant placedAt) {
+        return new Order(id, customerId, items, price, status, placedAt);
     }
 
-    public void markPaid() {
-        if (status != OrderStatus.NEW) {
-            throw new DomainException("Khong the thanh toan don o trang thai " + status.label());
+    private static void requireNoDuplicateProduct(List<OrderItem> items) {
+        Set<ProductId> seen = new HashSet<>();
+        for (OrderItem item : items) {
+            if (!seen.add(item.productId())) {
+                throw new DomainException("San pham bi lap lai trong don hang: " + item.productId());
+            }
         }
-        this.status = OrderStatus.PAID;
     }
 
-    public void cancel(String reason) {
-        if (status == OrderStatus.CANCELLED) {
-            throw new DomainException("Don hang da bi huy truoc do");
-        }
-        this.status = OrderStatus.CANCELLED;
-        this.note = reason;
-    }
-
-    public boolean isEmpty() {
-        return lines.isEmpty();
-    }
-
-    public Money getSubtotal() {
-        return lines.stream().map(OrderLine::getLineTotal).reduce(Money.ZERO, Money::plus);
-    }
-
-    public Money getTotal() {
-        return getSubtotal().minus(discount).plus(shippingFee);
-    }
-
-    public int getTotalItems() {
-        return lines.stream().mapToInt(OrderLine::getQuantity).sum();
-    }
-
-    public String getId() {
+    public OrderId id() {
         return id;
     }
 
-    public String getCustomerId() {
+    public CustomerId customerId() {
         return customerId;
     }
 
-    public String getCustomerName() {
-        return customerName;
+    /** Danh sach bat bien: khong ai sua duoc ruot aggregate tu ben ngoai. */
+    public List<OrderItem> items() {
+        return items;
     }
 
-    public String getShippingAddress() {
-        return shippingAddress;
+    public PriceBreakdown price() {
+        return price;
     }
 
-    /** Tra ve danh sach chi doc: View chi duoc DOC Model, khong duoc sua. */
-    public List<OrderLine> getLines() {
-        return Collections.unmodifiableList(lines);
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public OrderStatus getStatus() {
+    public OrderStatus status() {
         return status;
     }
 
-    public Money getDiscount() {
-        return discount;
+    public Instant placedAt() {
+        return placedAt;
     }
 
-    public Money getShippingFee() {
-        return shippingFee;
+    public int totalItems() {
+        return items.stream().mapToInt(item -> item.quantity().value()).sum();
     }
 
-    public String getNote() {
-        return note;
+    @Override
+    public boolean equals(Object other) {
+        // Entity so sanh theo dinh danh, khong theo thuoc tinh.
+        return this == other || (other instanceof Order order && id.equals(order.id));
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 
     @Override
     public String toString() {
-        return "Order " + id + " [" + status.label() + "] " + getTotal();
+        return "Order[id=%s, customer=%s, status=%s, total=%s]"
+                .formatted(id, customerId, status, price.total());
     }
 }
