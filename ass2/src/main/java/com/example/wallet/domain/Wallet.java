@@ -99,21 +99,19 @@ public class Wallet {
      * rieng cua ben trong, tang ngoai khong phai biet Value Object cua domain
      * moi goi duoc ham nay.
      *
-     * Thu tu kiem tra co chu y:
-     *   1. So tien hop le chua? Day la loi CU PHAP cua lenh goi (so am, so 0),
-     *      kiem truoc vi no khong lien quan gi den trang thai cua vi.
-     *   2. Vi co dang bi khoa khong? Vi da khoa thi khoi ban den so du.
-     *   3. So du co du khong? Chinh la luat ma ma nguon cu bo quen.
+     * Hai luat bat bien dung nhu de bai liet ke, theo thu tu:
+     *   1. Vi co dang bi khoa khong? Vi da khoa thi khoi ban den so du.
+     *   2. So du co du khong? Chinh la luat ma ma nguon cu bo quen.
      *
-     * @throws DomainException khi so tien khong hop le, vi dang bi khoa, hoac
-     *         so du khong du
+     * Con viec chan so AM thi khong phai luat them vao: neu bo, subtract(-100)
+     * se CONG tien vao vi - dung loai loi ma bai nay dang di sua. Rang buoc do
+     * da nam san trong Value Object Money.
+     *
+     * @throws DomainException khi so tien am, vi dang bi khoa, hoac so du khong du
      */
     public void withdrawMoney(BigDecimal amount) {
         // Money tu chan null va so am - luat "tien khong the am" chi viet mot lan.
         Money requested = new Money(amount);
-        if (requested.isZero()) {
-            throw new DomainException("So tien rut phai lon hon 0");
-        }
         if (status.isLocked()) {
             throw new DomainException("Vi dien tu hien dang bi khoa, khong the rut tien");
         }
@@ -129,16 +127,11 @@ public class Wallet {
     /**
      * YEU CAU b - khoa vi.
      *
-     * Co y KHONG lam idempotent: khoa mot vi da khoa la dau hieu logic goi
-     * dang sai (goi hai lan, hoac hai luong cung xu ly mot su co), va aggregate
-     * noi thang ra thay vi im lang nuot di.
-     *
-     * @throws DomainException neu vi da bi khoa tu truoc
+     * Idempotent: khoa mot vi da khoa thi khong co gi xay ra va cung khong bao
+     * loi. De bai khong dat ra luat nao cho truong hop nay, nen aggregate
+     * khong tu nghi them mot luat - no chi lam dung viec duoc yeu cau.
      */
     public void lockWallet() {
-        if (status.isLocked()) {
-            throw new DomainException("Vi dien tu da bi khoa tu truoc");
-        }
         this.status = WalletStatus.LOCKED;
     }
 

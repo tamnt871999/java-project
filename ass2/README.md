@@ -9,7 +9,7 @@ Chạy được chỉ với **JDK 21**, không cần Maven, không có thư vi�
 | Lệnh | Tác dụng |
 |---|---|
 | `.\run.ps1 demo` | Chạy 5 kịch bản cho thấy invariant hoạt động (mặc định) |
-| `.\run.ps1 test` | Chạy 31 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
+| `.\run.ps1 test` | Chạy 30 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
 | `.\run.ps1 build` / `clean` | Chỉ biên dịch / dọn thư mục build |
 
 ---
@@ -54,7 +54,7 @@ Hậu quả không phải lý thuyết:
 |---|---|---|
 | **a.** Aggregate Root, `balance`/`status` về `private`, xoá mọi setter công khai | `Wallet` chỉ đổi trạng thái qua method nghiệp vụ; không còn một setter nào | [`domain/Wallet.java`](src/main/java/com/example/wallet/domain/Wallet.java) |
 | **b.** Phương thức giàu hành vi `withdrawMoney(BigDecimal)` và `lockWallet()` | Đúng chữ ký đề bài, đặt tên theo nghiệp vụ chứ không theo kỹ thuật | [`domain/Wallet.java`](src/main/java/com/example/wallet/domain/Wallet.java) |
-| **c.** Invariant + `DomainException` tự định nghĩa | Ví khóa không rút được; không rút quá số dư; số tiền phải > 0 | [`domain/DomainException.java`](src/main/java/com/example/wallet/domain/DomainException.java) |
+| **c.** Invariant + `DomainException` tự định nghĩa | Đúng 2 luật đề bài liệt kê: ví khóa không rút được, không rút quá số dư | [`domain/DomainException.java`](src/main/java/com/example/wallet/domain/DomainException.java) |
 
 ### Yêu cầu a — đóng gói
 
@@ -87,7 +87,6 @@ không có chỗ nào hợp lý để đặt câu hỏi "có được phép khô
 ```java
 public void withdrawMoney(BigDecimal amount) {
     Money requested = new Money(amount);                  // chặn null / số âm
-    if (requested.isZero())    throw new DomainException("So tien rut phai lon hon 0");
     if (status.isLocked())     throw new DomainException("Vi dien tu hien dang bi khoa...");
     if (!balance.isAtLeast(requested))
         throw new DomainException("So du khong du: can ... nhung chi con ...");
@@ -95,8 +94,9 @@ public void withdrawMoney(BigDecimal amount) {
 }
 ```
 
-Thứ tự kiểm tra có chủ ý: **số tiền hợp lệ** (lỗi cú pháp của lệnh gọi, không
-liên quan trạng thái ví) → **ví có bị khóa** → **số dư có đủ**.
+**Đúng 2 luật đề bài liệt kê, không thêm luật nào.** Việc chặn số **âm** không
+phải luật thêm vào: nếu bỏ, `subtract(-100)` sẽ **cộng** tiền vào ví — đúng loại
+bug mà bài này đang đi sửa. Ràng buộc đó nằm sẵn trong Value Object `Money`.
 
 Vì luật nằm *trong* aggregate, không còn đường nào lách được. Dù có bao nhiêu use
 case mới viết sau này, ví cũng không thể âm.
@@ -242,7 +242,7 @@ ass2/
     │   │   └── InMemoryWalletRepository.java
     │   └── bootstrap/Main.java           ← COMPOSITION ROOT (chỉ lắp ráp)
     └── test/java/com/example/wallet/
-        ├── SelfCheck.java                   26 test nghiệp vụ
+        ├── SelfCheck.java                   25 test nghiệp vụ
         ├── ArchitectureFitness.java         5 fitness function
         └── legacy/LegacyWalletCode.java     mã cũ, chỉ để đối chiếu
 ```
@@ -268,14 +268,30 @@ case kiểm tra hộ.
 
 ---
 
-## 8. Hai quyết định thiết kế có thể bàn
+## 8. Ranh giới phạm vi: cái gì có trong đề, cái gì không
 
-**`lockWallet()` cố ý KHÔNG idempotent** — khóa một ví đã khóa sẽ ném
-`DomainException`. Lý do: gọi hai lần thường là dấu hiệu logic gọi đang sai (hai
-luồng cùng xử lý một sự cố), và aggregate nói thẳng ra thay vì im lặng nuốt đi.
-Nếu nghiệp vụ thực tế muốn idempotent thì bỏ câu `if` đầu tiên trong `lockWallet()`.
+Bài này bám **đúng** ba yêu cầu a / b / c, không tự thêm luật nghiệp vụ nào.
+
+| Luật | Nguồn |
+|---|---|
+| Ví bị khóa thì không rút được | Đề bài, yêu cầu **c** |
+| Không rút quá số dư hiện có | Đề bài, yêu cầu **c** |
+| Không rút số tiền âm | **Không phải luật thêm** — bỏ đi thì `subtract(-100)` sẽ cộng tiền vào ví, tức là một bug mới. Ràng buộc nằm trong `Money`. |
+
+**`lockWallet()` là idempotent** — khóa một ví đã khóa thì không có gì xảy ra và
+cũng không báo lỗi. Đề bài không đặt ra luật nào cho trường hợp này, nên aggregate
+không tự nghĩ thêm một luật. Test `khoa lai lan nua van LOCKED, khong nem loi`
+khẳng định **không** có ngoại lệ nào bắn ra — nó canh sự *vắng mặt* của luật, chứ
+không phải thêm một invariant mới.
 
 **Aggregate khả biến (mutable)** — `withdrawMoney` đổi trạng thái tại chỗ và trả
 về `void`, đúng chữ ký đề bài yêu cầu. Aggregate khả biến là cách làm kinh điển
 của DDD; điểm mấu chốt không phải bất biến hay khả biến, mà là **mọi thay đổi đều
 phải đi qua một method có kiểm tra luật**.
+
+### Phần vượt ra ngoài mã domain — và lý do
+
+Ba yêu cầu đề bài đều nằm ở tầng domain. Các tầng `application` / `adapter` /
+`bootstrap` có mặt vì đây là bài **DDD meets Clean Architecture** — không có use
+case và outbound port thì không có gì để minh họa Dependency Rule. Chúng cố ý mỏng:
+`WithdrawMoneyService` chỉ tìm ví → bảo ví tự rút → lưu, không một câu `if` nghiệp vụ.

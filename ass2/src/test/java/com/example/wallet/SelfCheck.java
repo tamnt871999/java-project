@@ -47,7 +47,6 @@ public final class SelfCheck {
         khongDuocRutQuaSoDu();
         khongDuocRutKhiViBiKhoa();
         khongDuocRutSoTienKhongHopLe();
-        khongDuocKhoaViHaiLan();
         luatBatBienChanDuocLoiCuaBanCu();
 
         // Tang Application
@@ -111,6 +110,12 @@ public final class SelfCheck {
         wallet.lockWallet();
         check("khoa vi doi trang thai sang LOCKED", WalletStatus.LOCKED, wallet.status());
         check("khoa vi khong dong vao so du", Money.of("1000.00"), wallet.balance());
+
+        // De bai khong dat luat nao cho viec khoa lai lan nua, nen aggregate
+        // khong duoc tu nghi ra mot luat. Kiem tra day la kiem tra KHONG co
+        // ngoai le nao bat ra, chu khong phai them mot invariant moi.
+        wallet.lockWallet();
+        check("khoa lai lan nua van LOCKED, khong nem loi", WalletStatus.LOCKED, wallet.status());
     }
 
     // --- YEU CAU c: INVARIANT -----------------------------------------------
@@ -133,18 +138,12 @@ public final class SelfCheck {
 
     private static void khongDuocRutSoTienKhongHopLe() {
         Wallet wallet = activeWallet("1000.00");
+        // Chan so am KHONG phai luat them vao: neu bo, subtract(-100) se cong
+        // tien vao vi. Rang buoc nay nam san trong Value Object Money.
         expectDomainException("khong duoc rut so am",
                 () -> wallet.withdrawMoney(new BigDecimal("-100.00")));
-        expectDomainException("khong duoc rut so 0",
-                () -> wallet.withdrawMoney(BigDecimal.ZERO));
         expectNullPointer("khong duoc rut so tien null",
                 () -> wallet.withdrawMoney(null));
-    }
-
-    private static void khongDuocKhoaViHaiLan() {
-        Wallet wallet = activeWallet("1000.00");
-        wallet.lockWallet();
-        expectDomainException("khong duoc khoa vi da khoa", wallet::lockWallet);
     }
 
     /**

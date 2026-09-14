@@ -22,8 +22,6 @@ import java.util.Objects;
  */
 public final class Money implements Comparable<Money> {
 
-    public static final Money ZERO = new Money(BigDecimal.ZERO);
-
     private final BigDecimal amount;
 
     public Money(BigDecimal amount) {
@@ -51,10 +49,6 @@ public final class Money implements Comparable<Money> {
      */
     public Money minus(Money other) {
         return new Money(this.amount.subtract(other.amount));
-    }
-
-    public boolean isZero() {
-        return amount.signum() == 0;
     }
 
     public boolean isAtLeast(Money other) {
