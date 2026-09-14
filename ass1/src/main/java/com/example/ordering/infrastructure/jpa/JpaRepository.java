@@ -1,7 +1,5 @@
 package com.example.ordering.infrastructure.jpa;
 
-import java.util.Optional;
-
 /**
  * FRAMEWORKS AND DRIVERS - dong vai lifeline "Spring Data JPA".
  *
@@ -16,6 +14,4 @@ import java.util.Optional;
 public interface JpaRepository<T, ID> {
 
     T save(T entity);
-
-    Optional<T> findById(ID id);
 }

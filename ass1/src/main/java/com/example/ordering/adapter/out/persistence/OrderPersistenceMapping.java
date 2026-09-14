@@ -3,7 +3,6 @@ package com.example.ordering.adapter.out.persistence;
 import com.example.ordering.adapter.out.persistence.OrderEntity.OrderItemEntity;
 import com.example.ordering.infrastructure.jpa.EntityMapping;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,8 +28,7 @@ public final class OrderPersistenceMapping {
             "order_id",
             OrderEntity::id,
             OrderPersistenceMapping::toRow,
-            OrderPersistenceMapping::toChildRows,
-            OrderPersistenceMapping::fromRows);
+            OrderPersistenceMapping::toChildRows);
 
     private static Map<String, Object> toRow(OrderEntity entity) {
         Map<String, Object> row = new LinkedHashMap<>();
@@ -58,26 +56,6 @@ public final class OrderPersistenceMapping {
         return rows;
     }
 
-    private static OrderEntity fromRows(Map<String, Object> row, List<Map<String, Object>> childRows) {
-        List<OrderItemEntity> items = new ArrayList<>();
-        for (Map<String, Object> child : childRows) {
-            items.add(new OrderItemEntity(
-                    (String) child.get("order_id"),
-                    (String) child.get("product_id"),
-                    (int) child.get("quantity"),
-                    (BigDecimal) child.get("unit_price")));
-        }
-        return new OrderEntity(
-                (String) row.get("id"),
-                (String) row.get("customer_id"),
-                (String) row.get("status"),
-                (BigDecimal) row.get("subtotal"),
-                (BigDecimal) row.get("discount"),
-                (BigDecimal) row.get("shipping_fee"),
-                (BigDecimal) row.get("total"),
-                (String) row.get("placed_at"),
-                items);
-    }
 
     private OrderPersistenceMapping() {
     }

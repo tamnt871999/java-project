@@ -4,13 +4,10 @@ import com.example.ordering.adapter.in.web.ApiResponse;
 import com.example.ordering.adapter.in.web.OrderController;
 import com.example.ordering.adapter.out.persistence.GeneratedOrderJpaRepository;
 import com.example.ordering.adapter.out.persistence.JpaOrderRepositoryAdapter;
-import com.example.ordering.application.port.in.FindOrderUseCase;
 import com.example.ordering.application.port.in.PlaceOrderCommand;
 import com.example.ordering.application.port.in.PlaceOrderResult;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
 import com.example.ordering.application.port.out.OrderRepository;
-import com.example.ordering.application.usecase.FindOrderService;
-import com.example.ordering.application.usecase.OrderNotFoundException;
 import com.example.ordering.application.usecase.PlaceOrderService;
 import com.example.ordering.domain.DomainException;
 import com.example.ordering.domain.Money;
@@ -46,8 +43,6 @@ public final class SelfCheck {
         trungSanPhamBiTuChoi();
         soLuongKhongHopLeBiTuChoi();
         useCaseTraVeDtoChuKhongPhaiAggregate();
-        luuRoiDocLaiVanDungDuLieu();
-        khongTimThayThiNemDungLoi();
         controllerDichLoiThanhMaHttp();
         luongChayDungThuTuSequenceDiagram();
         ArchitectureFitness.run();
@@ -124,41 +119,19 @@ public final class SelfCheck {
         check("kieu tra ve la DTO bien", PlaceOrderResult.class, result.getClass());
     }
 
-    private static void luuRoiDocLaiVanDungDuLieu() {
-        Fixture fixture = new Fixture();
-        PlaceOrderResult saved = fixture.placeOrder("CUS-9", "SKU-B", 2, "60.00");
-        PlaceOrderResult loaded = fixture.findOrderUseCase.findById(saved.orderId());
-
-        check("doc lai dung ma don", saved.orderId(), loaded.orderId());
-        check("doc lai dung tong tien", saved.total(), loaded.total());
-        check("doc lai dung so luong mon", saved.totalItems(), loaded.totalItems());
-    }
-
-    private static void khongTimThayThiNemDungLoi() {
-        Fixture fixture = new Fixture();
-        try {
-            fixture.findOrderUseCase.findById("ORD-KHONG-CO");
-            fail("khong tim thay - le ra phai nem OrderNotFoundException");
-        } catch (OrderNotFoundException e) {
-            pass("khong tim thay thi nem OrderNotFoundException");
-        }
-    }
-
     // --- INTERFACE ADAPTERS ------------------------------------------------
 
     private static void controllerDichLoiThanhMaHttp() {
         Fixture fixture = new Fixture();
-        OrderController controller = new OrderController(fixture.placeOrderUseCase, fixture.findOrderUseCase);
+        OrderController controller = new OrderController(fixture.placeOrderUseCase);
 
         ApiResponse created = controller.placeOrder(json("CUS-1", "SKU-A", 2));
         check("dat hang thanh cong tra 201", 201, created.status());
-        check("201 kem header Location", "/orders/ORD-1001", created.headers().get("Location"));
 
         check("JSON hong tra 400", 400, controller.placeOrder("{khong phai json").status());
         check("thieu truong bat buoc tra 400", 400, controller.placeOrder("{\"items\":[]}").status());
         check("vi pham quy tac nghiep vu tra 422", 422,
                 controller.placeOrder(json("CUS-1", "SKU-A", 0)).status());
-        check("khong tim thay tra 404", 404, controller.getOrder("ORD-KHONG-CO").status());
     }
 
     // --- SEQUENCE DIAGRAM --------------------------------------------------
@@ -181,12 +154,12 @@ public final class SelfCheck {
                 recorder.orderRepository(realRepository),
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        new OrderController(useCase, new FindOrderService(realRepository))
-                .placeOrder(json("CUS-1", "SKU-A", 1));
+        new OrderController(useCase).placeOrder(json("CUS-1", "SKU-A", 1));
 
+        // Dung hai message ma sequence diagram ve cho PlaceOrderService, dung
+        // thu tu do. Them bat ky loi goi nao khac la bai test nay do.
         List<String> mongDoi = List.of(
                 "OrderPricingService.calculateTotal",
-                "OrderRepository.nextOrderId",
                 "OrderRepository.save");
         check("luong chay khop sequence diagram", mongDoi, recorder.calls());
     }
@@ -201,7 +174,6 @@ public final class SelfCheck {
      */
     private static final class Fixture {
         private final PlaceOrderUseCase placeOrderUseCase;
-        private final FindOrderUseCase findOrderUseCase;
 
         private Fixture() {
             Database database = new Database("H2", false);
@@ -209,7 +181,6 @@ public final class SelfCheck {
                     new JpaOrderRepositoryAdapter(new GeneratedOrderJpaRepository(database));
             this.placeOrderUseCase = new PlaceOrderService(
                     new OrderPricingService(), repository, Clock.fixed(NOW, ZoneOffset.UTC));
-            this.findOrderUseCase = new FindOrderService(repository);
         }
 
         private PlaceOrderResult placeOrder(String customerId, String productId,

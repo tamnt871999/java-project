@@ -2,7 +2,6 @@ package com.example.ordering.infrastructure.jpa;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -22,8 +21,7 @@ public record EntityMapping<T, ID>(
         String foreignKey,
         Function<T, ID> idOf,
         Function<T, Map<String, Object>> toRow,
-        Function<T, List<Map<String, Object>>> toChildRows,
-        BiFunction<Map<String, Object>, List<Map<String, Object>>, T> fromRows) {
+        Function<T, List<Map<String, Object>>> toChildRows) {
 
     public boolean hasChildTable() {
         return childTable != null;

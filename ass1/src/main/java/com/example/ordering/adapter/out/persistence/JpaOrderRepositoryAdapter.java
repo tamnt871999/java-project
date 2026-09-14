@@ -5,7 +5,6 @@ import com.example.ordering.domain.Order;
 import com.example.ordering.domain.OrderId;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -30,21 +29,14 @@ public class JpaOrderRepositoryAdapter implements OrderRepository {
 
     @Override
     public Order save(Order order) {
+        // Cap ma don o day chinh la vai tro cua @GeneratedValue: trong du an
+        // Spring that, khoa chinh do sequence cua database sinh ra va quay ve
+        // cung entity sau khi INSERT. Use case khong he biet viec nay xay ra.
+        Order orderWithId = order.withId(OrderId.of("ORD-" + sequence.incrementAndGet()));
+
         // domain -> entity -> (Spring Data JPA) -> entity -> domain
-        OrderEntity entity = OrderEntityMapper.toEntity(order);
+        OrderEntity entity = OrderEntityMapper.toEntity(orderWithId);
         OrderEntity savedEntity = jpaRepository.save(entity);
         return OrderEntityMapper.toDomain(savedEntity);
-    }
-
-    @Override
-    public Optional<Order> findById(OrderId orderId) {
-        return jpaRepository.findById(orderId.value()).map(OrderEntityMapper::toDomain);
-    }
-
-    @Override
-    public OrderId nextOrderId() {
-        // That ra day la trach nhiem cua ha tang: co the la sequence cua DB,
-        // UUID, hay bo sinh ma rieng. Use case chi can biet no nhan duoc mot id.
-        return OrderId.of("ORD-" + sequence.incrementAndGet());
     }
 }

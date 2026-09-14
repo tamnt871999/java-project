@@ -46,8 +46,7 @@ public class HttpServerRunner {
         server.start();
 
         System.out.println("REST API dang chay tai http://localhost:" + port);
-        System.out.println("  POST /orders       dat hang");
-        System.out.println("  GET  /orders/{id}  xem don hang");
+        System.out.println("  POST /orders   dat hang");
         System.out.println("Nhan Ctrl+C de dung.");
     }
 
@@ -80,12 +79,6 @@ public class HttpServerRunner {
                 return orderController.placeOrder(body);
             }
             return ApiResponse.methodNotAllowed("POST");
-        }
-        if (path.startsWith("/orders/")) {
-            if (method.equals("GET")) {
-                return orderController.getOrder(path.substring("/orders/".length()));
-            }
-            return ApiResponse.methodNotAllowed("GET");
         }
         return ApiResponse.error(404, "NOT_FOUND", "Khong co endpoint " + method + " " + path);
     }

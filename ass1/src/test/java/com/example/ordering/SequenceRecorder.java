@@ -2,14 +2,12 @@ package com.example.ordering;
 
 import com.example.ordering.application.port.out.OrderRepository;
 import com.example.ordering.domain.Order;
-import com.example.ordering.domain.OrderId;
 import com.example.ordering.domain.OrderItem;
 import com.example.ordering.domain.OrderPricingService;
 import com.example.ordering.domain.PriceBreakdown;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Bo ghi hinh cac lifeline trong sequence diagram.
@@ -27,41 +25,22 @@ final class SequenceRecorder {
         return List.copyOf(calls);
     }
 
-    void record(String call) {
-        calls.add(call);
-    }
-
-    /** Vo boc quanh OrderPricingService - lifeline "OrderPricingService". */
+    /** Vo boc lifeline "OrderPricingService (Domain Service / Entities)". */
     OrderPricingService pricingService() {
         return new OrderPricingService() {
             @Override
             public PriceBreakdown calculateTotal(List<OrderItem> items) {
-                record("OrderPricingService.calculateTotal");
+                calls.add("OrderPricingService.calculateTotal");
                 return super.calculateTotal(items);
             }
         };
     }
 
-    /** Vo boc quanh outbound port - lifeline "OrderRepository" va adapter phia sau. */
+    /** Vo boc lifeline "OrderRepository (Outbound Port / Application)". */
     OrderRepository orderRepository(OrderRepository delegate) {
-        return new OrderRepository() {
-            @Override
-            public Order save(Order order) {
-                record("OrderRepository.save");
-                return delegate.save(order);
-            }
-
-            @Override
-            public Optional<Order> findById(OrderId orderId) {
-                record("OrderRepository.findById");
-                return delegate.findById(orderId);
-            }
-
-            @Override
-            public OrderId nextOrderId() {
-                record("OrderRepository.nextOrderId");
-                return delegate.nextOrderId();
-            }
+        return order -> {
+            calls.add("OrderRepository.save");
+            return delegate.save(order);
         };
     }
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * FRAMEWORKS AND DRIVERS - dong vai lifeline "H2/Postgres (DB)".
@@ -36,29 +35,7 @@ public class Database {
                 table, String.join(", ", row.keySet()), placeholders(row)));
     }
 
-    public Optional<Map<String, Object>> selectById(String table, String primaryKey) {
-        log("SELECT * FROM %s WHERE id = '%s'".formatted(table, primaryKey));
-        Map<String, Map<String, Object>> rows = tables.get(table);
-        if (rows == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(rows.get(primaryKey)).map(LinkedHashMap::new);
-    }
 
-    public List<Map<String, Object>> selectWhere(String table, String column, Object value) {
-        log("SELECT * FROM %s WHERE %s = '%s'".formatted(table, column, value));
-        Map<String, Map<String, Object>> rows = tables.get(table);
-        if (rows == null) {
-            return List.of();
-        }
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (Map<String, Object> row : rows.values()) {
-            if (value.equals(row.get(column))) {
-                result.add(new LinkedHashMap<>(row));
-            }
-        }
-        return result;
-    }
 
     public void deleteWhere(String table, String column, Object value) {
         Map<String, Map<String, Object>> rows = tables.get(table);

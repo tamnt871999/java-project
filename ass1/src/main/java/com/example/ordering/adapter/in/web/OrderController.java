@@ -1,10 +1,8 @@
 package com.example.ordering.adapter.in.web;
 
-import com.example.ordering.application.port.in.FindOrderUseCase;
 import com.example.ordering.application.port.in.PlaceOrderCommand;
 import com.example.ordering.application.port.in.PlaceOrderResult;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
-import com.example.ordering.application.usecase.OrderNotFoundException;
 import com.example.ordering.domain.DomainException;
 
 import java.util.Objects;
@@ -32,11 +30,9 @@ import java.util.Objects;
 public class OrderController {
 
     private final PlaceOrderUseCase placeOrderUseCase;
-    private final FindOrderUseCase findOrderUseCase;
 
-    public OrderController(PlaceOrderUseCase placeOrderUseCase, FindOrderUseCase findOrderUseCase) {
+    public OrderController(PlaceOrderUseCase placeOrderUseCase) {
         this.placeOrderUseCase = Objects.requireNonNull(placeOrderUseCase, "placeOrderUseCase must not be null");
-        this.findOrderUseCase = Objects.requireNonNull(findOrderUseCase, "findOrderUseCase must not be null");
     }
 
     /** POST /orders */
@@ -50,7 +46,7 @@ public class OrderController {
 
         try {
             PlaceOrderResult result = placeOrderUseCase.placeOrder(command);
-            return ApiResponse.created(OrderJsonMapper.toJson(result), "/orders/" + result.orderId());
+            return ApiResponse.created(OrderJsonMapper.toJson(result));
         } catch (DomainException violated) {
             return ApiResponse.error(422, "BUSINESS_RULE_VIOLATED", violated.getMessage());
         } catch (IllegalArgumentException invalid) {
@@ -58,14 +54,4 @@ public class OrderController {
         }
     }
 
-    /** GET /orders/{id} */
-    public ApiResponse getOrder(String orderId) {
-        try {
-            return ApiResponse.ok(OrderJsonMapper.toJson(findOrderUseCase.findById(orderId)));
-        } catch (OrderNotFoundException notFound) {
-            return ApiResponse.error(404, "NOT_FOUND", notFound.getMessage());
-        } catch (DomainException invalidId) {
-            return ApiResponse.error(400, "BAD_REQUEST", invalidId.getMessage());
-        }
-    }
 }

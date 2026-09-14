@@ -12,13 +12,9 @@ import java.util.Map;
  */
 public record ApiResponse(int status, Object body, Map<String, String> headers) {
 
-    public static ApiResponse ok(Object body) {
-        return new ApiResponse(200, body, Map.of());
-    }
-
-    /** 201 kem header Location tro toi tai nguyen vua tao - dung chuan REST. */
-    public static ApiResponse created(Object body, String location) {
-        return new ApiResponse(201, body, Map.of("Location", location));
+    /** 201 Created - buoc cuoi cung trong sequence diagram. */
+    public static ApiResponse created(Object body) {
+        return new ApiResponse(201, body, Map.of());
     }
 
     public static ApiResponse error(int status, String code, String message) {

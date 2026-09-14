@@ -5,7 +5,6 @@ import com.example.ordering.infrastructure.db.Database;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * FRAMEWORKS AND DRIVERS - ban hien thuc cua JpaRepository.
@@ -48,14 +47,4 @@ public class SimpleJpaRepository<T, ID> implements JpaRepository<T, ID> {
         return entity;
     }
 
-    @Override
-    public Optional<T> findById(ID id) {
-        String primaryKey = String.valueOf(id);
-        return database.selectById(mapping.table(), primaryKey).map(row -> {
-            List<Map<String, Object>> childRows = mapping.hasChildTable()
-                    ? database.selectWhere(mapping.childTable(), mapping.foreignKey(), primaryKey)
-                    : List.of();
-            return mapping.fromRows().apply(row, childRows);
-        });
-    }
 }

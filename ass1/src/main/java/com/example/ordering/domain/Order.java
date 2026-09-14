@@ -18,6 +18,7 @@ import java.util.Set;
  */
 public class Order {
 
+    /** Chua co ma don cho toi khi duoc luu - xem withId(). */
     private final OrderId id;
     private final CustomerId customerId;
     private final List<OrderItem> items;
@@ -41,9 +42,8 @@ public class Order {
      * Toan bo dinh nghia "the nao la mot don hang hop le" nam o day - khong nam
      * o Use Case va cang khong nam o Controller.
      */
-    public static Order place(OrderId id, CustomerId customerId, List<OrderItem> items,
+    public static Order place(CustomerId customerId, List<OrderItem> items,
                               PriceBreakdown price, Instant placedAt) {
-        Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(customerId, "customerId must not be null");
         Objects.requireNonNull(items, "items must not be null");
         Objects.requireNonNull(price, "price must not be null");
@@ -54,7 +54,8 @@ public class Order {
         }
         requireNoDuplicateProduct(items);
 
-        return new Order(id, customerId, items, price, OrderStatus.PLACED, placedAt);
+        // Chua co ma don: ma don do tang luu tru sinh ra, giong @GeneratedValue.
+        return new Order(null, customerId, items, price, OrderStatus.PLACED, placedAt);
     }
 
     /**
@@ -68,6 +69,20 @@ public class Order {
         return new Order(id, customerId, items, price, status, placedAt);
     }
 
+    /**
+     * Tra ve BAN SAO cua don hang kem ma don vua duoc cap.
+     *
+     * Aggregate van bat bien: khong sua tai cho ma tao vat the moi. Tang luu
+     * tru goi ham nay ngay truoc khi ghi xuong database.
+     */
+    public Order withId(OrderId assignedId) {
+        Objects.requireNonNull(assignedId, "assignedId must not be null");
+        if (this.id != null) {
+            throw new DomainException("Don hang da co ma don: " + this.id);
+        }
+        return new Order(assignedId, customerId, items, price, status, placedAt);
+    }
+
     private static void requireNoDuplicateProduct(List<OrderItem> items) {
         Set<ProductId> seen = new HashSet<>();
         for (OrderItem item : items) {
@@ -77,7 +92,11 @@ public class Order {
         }
     }
 
+    /** @throws DomainException neu don hang chua duoc luu nen chua co ma don */
     public OrderId id() {
+        if (id == null) {
+            throw new DomainException("Don hang chua duoc luu nen chua co ma don");
+        }
         return id;
     }
 
@@ -108,18 +127,22 @@ public class Order {
 
     @Override
     public boolean equals(Object other) {
-        // Entity so sanh theo dinh danh, khong theo thuoc tinh.
-        return this == other || (other instanceof Order order && id.equals(order.id));
+        // Entity so sanh theo dinh danh, khong theo thuoc tinh. Don chua duoc
+        // luu thi chua co dinh danh nen chi bang chinh no.
+        if (this == other) {
+            return true;
+        }
+        return other instanceof Order order && id != null && id.equals(order.id);
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return id == null ? System.identityHashCode(this) : id.hashCode();
     }
 
     @Override
     public String toString() {
         return "Order[id=%s, customer=%s, status=%s, total=%s]"
-                .formatted(id, customerId, status, price.total());
+                .formatted(id == null ? "chua cap" : id, customerId, status, price.total());
     }
 }

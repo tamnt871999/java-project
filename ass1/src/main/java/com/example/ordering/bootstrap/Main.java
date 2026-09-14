@@ -4,10 +4,8 @@ import com.example.ordering.adapter.in.web.OrderController;
 import com.example.ordering.adapter.out.persistence.JpaOrderRepositoryAdapter;
 import com.example.ordering.adapter.out.persistence.GeneratedOrderJpaRepository;
 import com.example.ordering.adapter.out.persistence.OrderJpaRepository;
-import com.example.ordering.application.port.in.FindOrderUseCase;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
 import com.example.ordering.application.port.out.OrderRepository;
-import com.example.ordering.application.usecase.FindOrderService;
 import com.example.ordering.application.usecase.PlaceOrderService;
 import com.example.ordering.domain.OrderPricingService;
 import com.example.ordering.infrastructure.db.Database;
@@ -54,10 +52,8 @@ public final class Main {
         OrderPricingService pricingService = new OrderPricingService();
         PlaceOrderUseCase placeOrderUseCase =
                 new PlaceOrderService(pricingService, orderRepository, Clock.systemUTC());
-        FindOrderUseCase findOrderUseCase = new FindOrderService(orderRepository);
-
         // --- Quay lai vong 3 roi vong 4: cam adapter vao ha tang --------------
-        OrderController orderController = new OrderController(placeOrderUseCase, findOrderUseCase);
+        OrderController orderController = new OrderController(placeOrderUseCase);
         new HttpServerRunner(port, orderController).start();
     }
 

@@ -7,7 +7,6 @@ import com.example.ordering.application.port.out.OrderRepository;
 import com.example.ordering.domain.CustomerId;
 import com.example.ordering.domain.Money;
 import com.example.ordering.domain.Order;
-import com.example.ordering.domain.OrderId;
 import com.example.ordering.domain.OrderItem;
 import com.example.ordering.domain.OrderPricingService;
 import com.example.ordering.domain.PriceBreakdown;
@@ -62,11 +61,12 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         PriceBreakdown price = pricingService.calculateTotal(items);
 
         // 3. Aggregate tu kiem tra invariant roi tao don hang.
-        OrderId orderId = orderRepository.nextOrderId();
-        Instant placedAt = Instant.now(clock);
-        Order order = Order.place(orderId, CustomerId.of(command.customerId()), items, price, placedAt);
+        //    Chua co ma don o buoc nay - ma don do tang luu tru cap.
+        Order order = Order.place(
+                CustomerId.of(command.customerId()), items, price, Instant.now(clock));
 
         // 4. save(order)  [qua outbound port - khong biet ai hien thuc]
+        //    Don tra ve da mang ma don, giong khi JPA tra entity sau @GeneratedValue.
         Order savedOrder = orderRepository.save(order);
 
         // 5. Tra ve DTO bien, khong tra aggregate.
@@ -84,8 +84,7 @@ public class PlaceOrderService implements PlaceOrderUseCase {
         return items;
     }
 
-    /** Ham dung chung voi FindOrderService de mot don hang luon hien ra cung mot hinh hai. */
-    static PlaceOrderResult toResult(Order order) {
+    private static PlaceOrderResult toResult(Order order) {
         PriceBreakdown price = order.price();
         return new PlaceOrderResult(
                 order.id().value(),
