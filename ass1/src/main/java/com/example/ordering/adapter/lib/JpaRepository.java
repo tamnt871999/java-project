@@ -1,12 +1,12 @@
-package com.example.ordering.infrastructure.jpa;
+package com.example.ordering.adapter.lib;
 
 import java.util.Optional;
 
 /**
- * FRAMEWORKS AND DRIVERS - dong vai lifeline "Spring Data JPA".
+ * THU VIEN GIA LAP - dong vai lifeline "Spring Data JPA".
  *
  * Chu ky ham cot loi duoc giu giong Spring Data that, de khi ban chuyen bai
- * nay sang Spring Boot thi chi viec xoa package infrastructure/jpa di va doi
+ * nay sang Spring Boot thi chi viec xoa package adapter/lib di va doi
  * import sang org.springframework.data.jpa.repository.JpaRepository - cac
  * class con lai gan nhu khong phai sua.
  *

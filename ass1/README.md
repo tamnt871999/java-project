@@ -48,8 +48,8 @@ curl http://localhost:8080/orders/ORD-1001
 | `OrderPricingService` | Domain Service / Entities | [`domain/OrderPricingService.java`](src/main/java/com/example/ordering/domain/OrderPricingService.java) |
 | `OrderRepository` | Outbound Port / Application | [`application/port/out/OrderRepository.java`](src/main/java/com/example/ordering/application/port/out/OrderRepository.java) |
 | `JpaOrderRepositoryAdapter` | Outbound Adapter / Interface Adapters | [`adapter/out/persistence/JpaOrderRepositoryAdapter.java`](src/main/java/com/example/ordering/adapter/out/persistence/JpaOrderRepositoryAdapter.java) |
-| `Spring Data JPA` | Frameworks & Drivers | [`infrastructure/jpa/`](src/main/java/com/example/ordering/infrastructure/jpa) (giả lập) |
-| `H2/Postgres (DB)` | Frameworks & Drivers | [`infrastructure/db/Database.java`](src/main/java/com/example/ordering/infrastructure/db/Database.java) (giả lập) |
+| `Spring Data JPA` | Frameworks & Drivers | [`adapter/lib/`](src/main/java/com/example/ordering/adapter/lib) (giả lập) |
+| `H2/Postgres (DB)` | Frameworks & Drivers | [`adapter/lib/Database.java`](src/main/java/com/example/ordering/adapter/lib/Database.java) (giả lập) |
 
 ### 14 message → 14 bước trong code
 
@@ -150,16 +150,21 @@ ghi `Result(orderId, total)`.
 
 ---
 
-## 4. Bốn vòng của Clean Architecture
+## 4. Ba package, bốn vòng
 
 ```
-   Vòng 4  infrastructure   Frameworks & Drivers  (HTTP server, Spring Data JPA, H2)
-   Vòng 3  adapter          Interface Adapters    (Controller, Repository Adapter)
-   Vòng 2  application      Use Cases             (inbound port, interactor, outbound port)
-   Vòng 1  domain           Entities              (aggregate, value object, domain service)
+   adapter/lib   Vòng 4  Frameworks & Drivers  (giả lập Spring Data JPA + H2)
+   adapter       Vòng 3  Interface Adapters    (Controller, Repository Adapter)
+   application   Vòng 2  Use Cases             (inbound port, interactor, outbound port)
+   domain        Vòng 1  Entities              (aggregate, value object, domain service)
 
    THE DEPENDENCY RULE: mã nguồn ở vòng trong KHÔNG biết gì về vòng ngoài.
 ```
+
+Chỉ có **ba package gốc**. Vòng 4 không thành package riêng vì trong dự án thật
+nó **không phải mã nguồn của bạn** — nó là Spring Boot, Hibernate, driver JDBC,
+nằm trong `pom.xml`. Ở đây phải tự viết nên chúng được gom vào `adapter/lib/`,
+và xoá nguyên folder đó là chuyển được sang thư viện thật.
 
 **Điểm mấu chốt:** `OrderRepository` là interface do tầng **application** sở hữu,
 còn `JpaOrderRepositoryAdapter` hiện thực nó lại nằm ở vòng **adapter** bên ngoài.
@@ -172,15 +177,21 @@ vẫn chỉ vào trong. Đó là **Dependency Inversion**.
 có file vượt ranh giới:
 
 ```
-[OK]   tang 'domain' khong phu thuoc application, adapter, infrastructure, bootstrap
-[OK]   tang 'application' khong phu thuoc adapter, infrastructure, bootstrap
+[OK]   tang 'domain' khong phu thuoc application, adapter
+[OK]   tang 'application' khong phu thuoc adapter
 [OK]   tang 'domain' khong dinh cong nghe ha tang (spring, jakarta, javax, sql, net)
 [OK]   tang 'application' khong dinh cong nghe ha tang
-[OK]   tang 'adapter' khong phu thuoc bootstrap
+[OK]   tang 'adapter/lib' khong phu thuoc com.example.ordering.
 ```
 
-Vòng 3 **được phép** phụ thuộc vòng 4 — đó đúng là việc của nó: làm nơi duy nhất
-chạm vào framework. Cái bị cấm tuyệt đối là domain và application chạm vào hạ tầng.
+Vòng 3 **được phép** chạm vào framework — đó đúng là việc của nó. Cái bị cấm
+tuyệt đối là domain và application chạm vào hạ tầng.
+
+Rule cuối canh một điều khác: `adapter/lib/` phải **thật sự tổng quát**. Bốn file
+trong đó không được import bất cứ thứ gì của dự án — chúng không biết `Order` hay
+`OrderEntity` tồn tại. Ngay khi một file trong đó import `com.example.ordering`,
+nó thôi là thư viện, và lời hứa "xoá folder này để thay bằng dependency thật"
+không còn giữ được.
 
 ---
 
@@ -192,6 +203,8 @@ ass1/
 ├── run.ps1
 └── src/
     ├── main/java/com/example/ordering/
+    │   ├── Main.java                     ← COMPOSITION ROOT (chỉ lắp ráp)
+    │   │                                    tương đương @SpringBootApplication
     │   ├── domain/                       ← VÒNG 1 (Entities)
     │   │   ├── Order.java                   Aggregate Root
     │   │   ├── OrderPricingService.java     Domain Service — lifeline trong hình
@@ -201,27 +214,29 @@ ass1/
     │   │   └── OrderStatus, DomainException
     │   ├── application/                  ← VÒNG 2 (Use Cases)
     │   │   ├── port/in/                     PlaceOrderUseCase, PlaceOrderCommand,
-    │   │   │                                PlaceOrderResult
+    │   │   │                                PlaceOrderResult, GetOrderUseCase,
+    │   │   │                                OrderView, OrderNotFoundException
     │   │   ├── port/out/OrderRepository.java
-    │   │   └── usecase/PlaceOrderService.java
-    │   ├── adapter/                      ← VÒNG 3 (Interface Adapters)
-    │   │   ├── in/web/                      OrderController, OrderJsonMapper,
-    │   │   │                                ApiResponse, Json, JsonSerializer
-    │   │   └── out/persistence/             JpaOrderRepositoryAdapter, OrderEntity,
-    │   │                                    OrderEntityMapper, OrderJpaRepository,
-    │   │                                    GeneratedOrderJpaRepository,
-    │   │                                    OrderPersistenceMapping
-    │   ├── infrastructure/               ← VÒNG 4 (Frameworks & Drivers)
-    │   │   ├── web/HttpServerRunner.java    HTTP server
-    │   │   ├── jpa/                         giả lập Spring Data JPA
-    │   │   └── db/Database.java             giả lập H2/Postgres
-    │   └── bootstrap/Main.java           ← COMPOSITION ROOT (chỉ lắp ráp)
+    │   │   └── usecase/                     PlaceOrderService, GetOrderService
+    │   └── adapter/                      ← VÒNG 3 (Interface Adapters)
+    │       ├── in/web/                      OrderController, OrderJsonMapper,
+    │       │                                ApiResponse, Json, JsonSerializer,
+    │       │                                HttpServerRunner
+    │       ├── out/persistence/             JpaOrderRepositoryAdapter, OrderEntity,
+    │       │                                OrderEntityMapper, OrderJpaRepository,
+    │       │                                GeneratedOrderJpaRepository,
+    │       │                                OrderPersistenceMapping
+    │       └── lib/                      ← VÒNG 4 — giả lập THƯ VIỆN
+    │                                        Database          (≈ H2/Postgres)
+    │                                        JpaRepository     (≈ Spring Data)
+    │                                        SimpleJpaRepository, EntityMapping
     └── test/java/com/example/ordering/
-        ├── SelfCheck.java                   20 test nghiệp vụ
+        ├── SelfCheck.java                   33 test nghiệp vụ
         ├── SequenceRecorder.java            ghi lại thứ tự lời gọi
         └── ArchitectureFitness.java         5 fitness function
 ```
 
-> Spring Data JPA và H2 được **giả lập** bằng vài class thuần JDK để bài chạy được
-> mà không cần tải thư viện. Chữ ký hàm giữ giống bản thật, nên khi chuyển sang
-> Spring Boot chỉ việc xoá package `infrastructure/` và đổi import.
+> Bốn file trong `adapter/lib/` **giả lập** Spring Data JPA và H2 bằng JDK thuần,
+> để bài chạy được mà không cần tải thư viện. Chữ ký hàm giữ giống bản thật, nên
+> khi chuyển sang Spring Boot chỉ việc **xoá nguyên folder đó** và đổi import.
+> Có một fitness function canh để chúng không lỡ biết gì về `Order`.

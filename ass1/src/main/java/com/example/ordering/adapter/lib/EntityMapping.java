@@ -1,4 +1,4 @@
-package com.example.ordering.infrastructure.jpa;
+package com.example.ordering.adapter.lib;
 
 import java.util.List;
 import java.util.Map;

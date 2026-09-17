@@ -1,6 +1,8 @@
-package com.example.ordering.bootstrap;
+package com.example.ordering;
 
+import com.example.ordering.adapter.in.web.HttpServerRunner;
 import com.example.ordering.adapter.in.web.OrderController;
+import com.example.ordering.adapter.lib.Database;
 import com.example.ordering.adapter.out.persistence.JpaOrderRepositoryAdapter;
 import com.example.ordering.adapter.out.persistence.GeneratedOrderJpaRepository;
 import com.example.ordering.adapter.out.persistence.OrderJpaRepository;
@@ -10,8 +12,6 @@ import com.example.ordering.application.port.out.OrderRepository;
 import com.example.ordering.application.usecase.GetOrderService;
 import com.example.ordering.application.usecase.PlaceOrderService;
 import com.example.ordering.domain.OrderPricingService;
-import com.example.ordering.infrastructure.db.Database;
-import com.example.ordering.infrastructure.web.HttpServerRunner;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -20,8 +20,8 @@ import java.time.Clock;
  * COMPOSITION ROOT - noi DUY NHAT trong he thong duoc phep biet ca hai the gioi:
  * cac use case truu tuong va cac ban hien thuc cu the.
  *
- * Doc tu duoi len se thay dung thu tu cac vong cua Clean Architecture:
- *   Frameworks and Drivers -> Interface Adapters -> Use Cases -> Entities
+ * Doc tu tren xuong se thay dung thu tu cac vong cua Clean Architecture:
+ *   Thu vien / ha tang -> Interface Adapters -> Use Cases -> Entities
  *
  * Muon doi H2 sang Postgres that? Doi dong tao Database. Muon doi REST sang
  * gRPC? Doi dong tao HttpServerRunner. Khong mot file nao trong domain hay
@@ -32,8 +32,8 @@ import java.time.Clock;
  * LAP RAP nam o ria, khong nam trong loi.
  *
  * Cach chay:
- *   java com.example.ordering.bootstrap.Main        -> cong 8080
- *   java com.example.ordering.bootstrap.Main 9090   -> cong 9090
+ *   java com.example.ordering.Main        -> cong 8080
+ *   java com.example.ordering.Main 9090   -> cong 9090
  */
 public final class Main {
 
@@ -42,8 +42,9 @@ public final class Main {
     public static void main(String[] args) throws IOException {
         int port = args.length > 0 ? Integer.parseInt(args[0]) : DEFAULT_PORT;
 
-        // --- Vong 4: FRAMEWORKS AND DRIVERS -----------------------------------
+        // --- Vong ngoai cung: THU VIEN ----------------------------------------
         // Database dong vai H2/Postgres; SimpleJpaRepository dong vai Spring Data JPA.
+        // Trong du an that ca hai deu la dependency trong pom.xml.
         Database database = new Database("H2", true);
         OrderJpaRepository jpaRepository = new GeneratedOrderJpaRepository(database);
 
@@ -59,7 +60,7 @@ public final class Main {
         // doc thi di thang, vi khong co quy tac nghiep vu nao de ap dung.
         GetOrderUseCase getOrderUseCase = new GetOrderService(orderRepository);
 
-        // --- Quay lai vong 3 roi vong 4: cam adapter vao ha tang --------------
+        // --- Vong 3: cam Controller vao ha tang HTTP --------------------------
         OrderController orderController = new OrderController(placeOrderUseCase, getOrderUseCase);
         new HttpServerRunner(port, orderController).start();
     }

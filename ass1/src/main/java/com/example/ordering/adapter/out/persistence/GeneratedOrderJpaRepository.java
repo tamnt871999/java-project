@@ -1,7 +1,7 @@
 package com.example.ordering.adapter.out.persistence;
 
-import com.example.ordering.infrastructure.db.Database;
-import com.example.ordering.infrastructure.jpa.SimpleJpaRepository;
+import com.example.ordering.adapter.lib.Database;
+import com.example.ordering.adapter.lib.SimpleJpaRepository;
 
 /**
  * Dong vai PROXY MA SPRING DATA TU SINH luc chay.
@@ -11,9 +11,9 @@ import com.example.ordering.infrastructure.jpa.SimpleJpaRepository;
  * dung Spring nen ta noi tay interface do vao SimpleJpaRepository cong so do
  * anh xa ORDER_MAPPING.
  *
- * Class nay dat o vong Interface Adapters chu khong phai Frameworks, vi no
- * gan chat voi OrderEntity cua ta; con SimpleJpaRepository ben infrastructure
- * thi hoan toan tong quat, khong biet Order la gi.
+ * Class nay biet OrderEntity nen nam o adapter/out/persistence; con
+ * SimpleJpaRepository ben adapter/lib thi hoan toan tong quat, khong biet
+ * Order la gi.
  */
 public class GeneratedOrderJpaRepository
         extends SimpleJpaRepository<OrderEntity, String>

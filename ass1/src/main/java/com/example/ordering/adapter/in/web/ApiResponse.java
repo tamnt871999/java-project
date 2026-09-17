@@ -7,8 +7,8 @@ import java.util.Map;
  * Ket qua Controller tra ve: ma trang thai + body se duoc serialize thanh JSON.
  *
  * Nho lop nay, Controller quyet dinh duoc 200 / 201 / 404 ma khong phai dong
- * cham vao API cua HTTP server - viec ghi byte ra socket la cua tang
- * infrastructure.
+ * cham vao API cua HTTP server - viec ghi byte ra socket la cua
+ * HttpServerRunner.
  */
 public record ApiResponse(int status, Object body, Map<String, String> headers) {
 

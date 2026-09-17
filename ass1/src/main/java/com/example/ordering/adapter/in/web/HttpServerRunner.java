@@ -1,8 +1,4 @@
-package com.example.ordering.infrastructure.web;
-
-import com.example.ordering.adapter.in.web.ApiResponse;
-import com.example.ordering.adapter.in.web.JsonSerializer;
-import com.example.ordering.adapter.in.web.OrderController;
+package com.example.ordering.adapter.in.web;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
@@ -15,7 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 
 /**
- * FRAMEWORKS AND DRIVERS - ha tang HTTP va bang dinh tuyen.
+ * HA TANG HTTP va bang dinh tuyen - vong ngoai cung.
  *
  * Trong Spring Boot, toan bo class nay duoc thay bang DispatcherServlet cong
  * cac annotation @PostMapping / @GetMapping. Viet tay de nhin ro co che ben

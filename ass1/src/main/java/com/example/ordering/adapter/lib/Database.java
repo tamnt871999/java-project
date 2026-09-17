@@ -1,4 +1,4 @@
-package com.example.ordering.infrastructure.db;
+package com.example.ordering.adapter.lib;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -7,13 +7,13 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * FRAMEWORKS AND DRIVERS - dong vai lifeline "H2/Postgres (DB)".
+ * THU VIEN GIA LAP - dong vai lifeline "H2/Postgres (DB)".
  *
  * Day la CSDL gia lap trong bo nho, co in ra cau lenh SQL tuong duong de ban
  * nhin thay dung nhung gi mot database that se nhan duoc.
  *
  * Vi sao khong dung H2 that? Bai tap nay chay chi voi JDK 21, khong tai thu
- * vien ngoai. Doi lai, RANH GIOI van dung cho: chi co package infrastructure
+ * vien ngoai. Doi lai, RANH GIOI van dung cho: chi co adapter/out/persistence
  * biet class nay ton tai. Muon doi sang H2 that thi thay class nay bang mot
  * DataSource JDBC, khong file nao trong domain hay application phai sua.
  */

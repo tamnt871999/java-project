@@ -16,18 +16,19 @@ import java.util.stream.Stream;
  * vao Entities cho nhanh la Clean Architecture am tham sup do, ma build van
  * xanh va test nghiep vu van qua het.
  *
- * BON VONG cua Clean Architecture trong bai nay:
+ * BA PACKAGE, BON VONG:
  *
- *   Vong 4  infrastructure  (Frameworks and Drivers: HTTP server, JPA, DB)
- *   Vong 3  adapter         (Interface Adapters: Controller, Repository Adapter)
- *   Vong 2  application     (Use Cases: inbound port, interactor, outbound port)
- *   Vong 1  domain          (Entities: aggregate, value object, domain service)
+ *   adapter/lib   Vong 4  Frameworks and Drivers - gia lap Spring Data JPA va H2.
+ *                         Trong du an that day la dependency trong pom.xml,
+ *                         khong phai ma nguon, nen no khong thanh package rieng.
+ *   adapter       Vong 3  Interface Adapters - Controller, Repository Adapter
+ *   application   Vong 2  Use Cases - inbound port, interactor, outbound port
+ *   domain        Vong 1  Entities - aggregate, value object, domain service
  *
  * THE DEPENDENCY RULE: ma nguon o vong trong KHONG duoc biet gi ve vong ngoai.
  *
- * Ghi chu ve vong 3: adapter duoc phep phu thuoc infrastructure, vi do dung la
- * viec cua no - lam noi duy nhat cham vao framework. Cai bi cam tuyet doi la
- * domain va application cham vao ha tang.
+ * Ghi chu ve vong 3: adapter duoc phep cham vao framework, vi do dung la viec
+ * cua no. Cai bi cam tuyet doi la domain va application cham vao ha tang.
  *
  * Doc ma nguon bang chuoi la cach don gian nhat, du dung cho bai tap. Du an
  * that nen dung ArchUnit - no phan tich bytecode nen bat duoc ca truong hop
@@ -47,15 +48,11 @@ final class ArchitectureFitness {
         // Luat 1 - Entities la vong trong cung: khong biet gi ve moi vong ngoai.
         checkNoImport(sourceRoot, "domain", List.of(
                 PKG + ".application",
-                PKG + ".adapter",
-                PKG + ".infrastructure",
-                PKG + ".bootstrap"));
+                PKG + ".adapter"));
 
         // Luat 2 - Use Cases chi duoc biet Entities.
         checkNoImport(sourceRoot, "application", List.of(
-                PKG + ".adapter",
-                PKG + ".infrastructure",
-                PKG + ".bootstrap"));
+                PKG + ".adapter"));
 
         // Luat 3 - hai vong trong cung phai sach bong khoi cong nghe ha tang.
         checkNoImport(sourceRoot, "domain", List.of(
@@ -65,8 +62,11 @@ final class ArchitectureFitness {
                 "org.springframework", "jakarta.", "javax.", "com.fasterxml",
                 "com.sun.", "java.sql", "java.net"));
 
-        // Luat 4 - chi composition root duoc phep biet ban hien thuc cu the.
-        checkNoImport(sourceRoot, "adapter", List.of(PKG + ".bootstrap"));
+        // Luat 4 - adapter/lib la THU VIEN GIA LAP, phai tong quat that su:
+        // no khong duoc biet Order, OrderEntity hay bat ky thu gi cua du an nay.
+        // Ngay khi mot file trong do import PKG la no da thoi la thu vien, va
+        // viec "xoa ca folder roi thay bang dependency that" khong con lam duoc.
+        checkNoImport(sourceRoot, "adapter/lib", List.of(PKG + "."));
     }
 
     private static void checkNoImport(Path sourceRoot, String layer, List<String> forbidden) {

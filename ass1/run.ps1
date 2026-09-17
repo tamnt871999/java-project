@@ -20,7 +20,7 @@ $ErrorActionPreference = "Stop"
 $root       = $PSScriptRoot
 $outDir     = Join-Path $root "out"
 $testOutDir = Join-Path $root "out-test"
-$mainClass  = "com.example.ordering.bootstrap.Main"
+$mainClass  = "com.example.ordering.Main"
 $testClass  = "com.example.ordering.SelfCheck"
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

@@ -18,7 +18,7 @@ import com.example.ordering.domain.Money;
 import com.example.ordering.domain.OrderItem;
 import com.example.ordering.domain.OrderPricingService;
 import com.example.ordering.domain.PriceBreakdown;
-import com.example.ordering.infrastructure.db.Database;
+import com.example.ordering.adapter.lib.Database;
 
 import java.math.BigDecimal;
 import java.time.Clock;

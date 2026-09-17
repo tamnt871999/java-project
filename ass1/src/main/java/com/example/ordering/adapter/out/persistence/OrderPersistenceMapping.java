@@ -1,7 +1,7 @@
 package com.example.ordering.adapter.out.persistence;
 
 import com.example.ordering.adapter.out.persistence.OrderEntity.OrderItemEntity;
-import com.example.ordering.infrastructure.jpa.EntityMapping;
+import com.example.ordering.adapter.lib.EntityMapping;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

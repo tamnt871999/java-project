@@ -1,6 +1,4 @@
-package com.example.ordering.infrastructure.jpa;
-
-import com.example.ordering.infrastructure.db.Database;
+package com.example.ordering.adapter.lib;
 
 import java.util.List;
 import java.util.Map;
@@ -8,15 +6,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * FRAMEWORKS AND DRIVERS - ban hien thuc cua JpaRepository.
+ * THU VIEN GIA LAP - ban hien thuc cua JpaRepository.
  *
  * Spring Data JPA sinh class nay luc chay bang proxy dong; o day ta viet tay
  * de nhin ro no lam gi: nhan mot entity, tra thanh cac dong du lieu, roi ban
  * cau lenh SQL xuong database - va nguoc lai khi doc.
  *
  * Class nay van TONG QUAT - no chi biet EntityMapping va Database, khong biet
- * Order la gi. Do la ly do no nam duoc o vong ngoai cung ma khong lam ban
- * kien truc.
+ * Order la gi. Co mot fitness function canh dieu do: khong file nao trong
+ * adapter/lib duoc phep import bat ky package nao cua du an.
  */
 public class SimpleJpaRepository<T, ID> implements JpaRepository<T, ID> {
 

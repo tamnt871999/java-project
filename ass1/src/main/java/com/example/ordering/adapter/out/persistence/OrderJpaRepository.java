@@ -1,6 +1,6 @@
 package com.example.ordering.adapter.out.persistence;
 
-import com.example.ordering.infrastructure.jpa.JpaRepository;
+import com.example.ordering.adapter.lib.JpaRepository;
 
 /**
  * Khai bao repository theo dung kieu Spring Data.
@@ -10,7 +10,7 @@ import com.example.ordering.infrastructure.jpa.JpaRepository;
  *
  *     public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> { }
  *
- * O bai nay ban hien thuc la SimpleJpaRepository ben package infrastructure,
+ * O bai nay ban hien thuc la SimpleJpaRepository ben package adapter/lib,
  * duoc lap rap trong Main.
  */
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> {

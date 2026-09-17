@@ -5,7 +5,7 @@ với **JDK 21** — không cần Maven, không có thư viện ngoài.
 
 | Bài | Đề bài | Kiến trúc | Tài liệu |
 |---|---|---|---|
-| [`ass1/`](ass1) | Triển khai "Place Order" theo sequence diagram mẫu | Clean Architecture — 4 vòng | [ass1/README.md](ass1/README.md) |
+| [`ass1/`](ass1) | Triển khai "Place Order" theo sequence diagram mẫu | Clean Architecture — 3 package, 4 vòng | [ass1/README.md](ass1/README.md) |
 | [`ass2/`](ass2) | Tái cấu trúc ví điện tử từ anemic sang rich model | DDD meets Clean Architecture — 3 vòng | [ass2/README.md](ass2/README.md) |
 
 Hai bài **độc lập hoàn toàn**: khác đề bài, khác package gốc

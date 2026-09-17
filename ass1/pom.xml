@@ -27,7 +27,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.example.ordering.bootstrap.Main</mainClass>
+                            <mainClass>com.example.ordering.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
