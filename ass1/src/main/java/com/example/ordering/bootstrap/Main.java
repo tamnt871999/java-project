@@ -4,8 +4,10 @@ import com.example.ordering.adapter.in.web.OrderController;
 import com.example.ordering.adapter.out.persistence.JpaOrderRepositoryAdapter;
 import com.example.ordering.adapter.out.persistence.GeneratedOrderJpaRepository;
 import com.example.ordering.adapter.out.persistence.OrderJpaRepository;
+import com.example.ordering.application.port.in.GetOrderUseCase;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
 import com.example.ordering.application.port.out.OrderRepository;
+import com.example.ordering.application.usecase.GetOrderService;
 import com.example.ordering.application.usecase.PlaceOrderService;
 import com.example.ordering.domain.OrderPricingService;
 import com.example.ordering.infrastructure.db.Database;
@@ -52,8 +54,13 @@ public final class Main {
         OrderPricingService pricingService = new OrderPricingService();
         PlaceOrderUseCase placeOrderUseCase =
                 new PlaceOrderService(pricingService, orderRepository, Clock.systemUTC());
+        // Hai use case dung CHUNG mot orderRepository: cung mot cong ra, hai
+        // huong su dung khac nhau. Ghi di qua domain service va aggregate;
+        // doc thi di thang, vi khong co quy tac nghiep vu nao de ap dung.
+        GetOrderUseCase getOrderUseCase = new GetOrderService(orderRepository);
+
         // --- Quay lai vong 3 roi vong 4: cam adapter vao ha tang --------------
-        OrderController orderController = new OrderController(placeOrderUseCase);
+        OrderController orderController = new OrderController(placeOrderUseCase, getOrderUseCase);
         new HttpServerRunner(port, orderController).start();
     }
 

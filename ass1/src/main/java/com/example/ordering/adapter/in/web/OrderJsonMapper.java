@@ -1,5 +1,6 @@
 package com.example.ordering.adapter.in.web;
 
+import com.example.ordering.application.port.in.OrderView;
 import com.example.ordering.application.port.in.PlaceOrderCommand;
 import com.example.ordering.application.port.in.PlaceOrderResult;
 
@@ -49,6 +50,41 @@ final class OrderJsonMapper {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("orderId", result.orderId());
         json.put("total", result.total());
+        return json;
+    }
+
+    /**
+     * OrderView -> JSON cho GET /orders/{id}.
+     *
+     * De y: ten truong tren JSON do CHINH FILE NAY quyet dinh. Muon doi
+     * "shippingFee" thanh "shipping_fee" cho hop chuan cua doi frontend thi
+     * sua o day, va khong mot dong nao trong application hay domain phai doi.
+     * Do la gia tri thuc te cua lop mapper ma nhieu nguoi cho la thua.
+     */
+    static Map<String, Object> toJson(OrderView view) {
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (OrderView.Line line : view.items()) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("productId", line.productId());
+            item.put("quantity", line.quantity());
+            item.put("unitPrice", line.unitPrice());
+            item.put("lineTotal", line.lineTotal());
+            items.add(item);
+        }
+
+        Map<String, Object> price = new LinkedHashMap<>();
+        price.put("subtotal", view.subtotal());
+        price.put("discount", view.discount());
+        price.put("shippingFee", view.shippingFee());
+        price.put("total", view.total());
+
+        Map<String, Object> json = new LinkedHashMap<>();
+        json.put("orderId", view.orderId());
+        json.put("customerId", view.customerId());
+        json.put("status", view.status());
+        json.put("placedAt", view.placedAt());
+        json.put("items", items);
+        json.put("price", price);
         return json;
     }
 

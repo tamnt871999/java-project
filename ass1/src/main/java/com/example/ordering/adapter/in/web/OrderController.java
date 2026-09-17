@@ -1,5 +1,8 @@
 package com.example.ordering.adapter.in.web;
 
+import com.example.ordering.application.port.in.GetOrderUseCase;
+import com.example.ordering.application.port.in.OrderNotFoundException;
+import com.example.ordering.application.port.in.OrderView;
 import com.example.ordering.application.port.in.PlaceOrderCommand;
 import com.example.ordering.application.port.in.PlaceOrderResult;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
@@ -30,9 +33,14 @@ import java.util.Objects;
 public class OrderController {
 
     private final PlaceOrderUseCase placeOrderUseCase;
+    private final GetOrderUseCase getOrderUseCase;
 
-    public OrderController(PlaceOrderUseCase placeOrderUseCase) {
+    // Controller phu thuoc vao HAI inbound port rieng biet, khong phai mot
+    // interface OrderService gop chung. Doi lay: co the tiem ban gia cho tung
+    // use case, va them use case moi khong lam doi chu ky cua cai da co.
+    public OrderController(PlaceOrderUseCase placeOrderUseCase, GetOrderUseCase getOrderUseCase) {
         this.placeOrderUseCase = Objects.requireNonNull(placeOrderUseCase, "placeOrderUseCase must not be null");
+        this.getOrderUseCase = Objects.requireNonNull(getOrderUseCase, "getOrderUseCase must not be null");
     }
 
     /** POST /orders */
@@ -49,6 +57,28 @@ public class OrderController {
             return ApiResponse.created(OrderJsonMapper.toJson(result));
         } catch (DomainException violated) {
             return ApiResponse.error(422, "BUSINESS_RULE_VIOLATED", violated.getMessage());
+        } catch (IllegalArgumentException invalid) {
+            return ApiResponse.error(400, "BAD_REQUEST", invalid.getMessage());
+        }
+    }
+
+    /**
+     * GET /orders/{id}
+     *
+     * Ngan hon placeOrder vi khong co body de parse: tham so duy nhat da nam
+     * san tren duong dan, do tang ha tang boc ra.
+     *
+     * Van la cung mot cong viec: dich ngon ngu HTTP thanh loi goi use case,
+     * roi dich ket qua va exception nguoc lai thanh ma trang thai HTTP.
+     */
+    public ApiResponse getOrder(String orderId) {
+        try {
+            OrderView view = getOrderUseCase.getOrder(orderId);
+            return ApiResponse.ok(OrderJsonMapper.toJson(view));
+        } catch (OrderNotFoundException notFound) {
+            // Use case nem exception nghiep vu, Controller doi thanh 404.
+            // Day la DUY NHAT mot noi trong he thong biet so 404 ton tai.
+            return ApiResponse.error(404, "ORDER_NOT_FOUND", notFound.getMessage());
         } catch (IllegalArgumentException invalid) {
             return ApiResponse.error(400, "BAD_REQUEST", invalid.getMessage());
         }

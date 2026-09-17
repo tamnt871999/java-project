@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * FRAMEWORKS AND DRIVERS - dong vai lifeline "H2/Postgres (DB)".
@@ -36,6 +37,39 @@ public class Database {
     }
 
 
+    /**
+     * SELECT theo khoa chinh - tuong duong em.find(Entity.class, id) cua JPA.
+     *
+     * Tra Optional vi "khong co dong nao" la ket qua hop le cua mot cau SELECT.
+     */
+    public Optional<Map<String, Object>> selectById(String table, String primaryKey) {
+        log("SELECT * FROM %s WHERE id = '%s'".formatted(table, primaryKey));
+        Map<String, Map<String, Object>> rows = tables.get(table);
+        if (rows == null) {
+            return Optional.empty();
+        }
+        Map<String, Object> row = rows.get(primaryKey);
+        return row == null ? Optional.empty() : Optional.of(new LinkedHashMap<>(row));
+    }
+
+    /**
+     * SELECT theo mot cot bat ky - dung de lay cac dong con theo khoa ngoai,
+     * chinh la cau lenh Hibernate ban ra khi nap mot @OneToMany.
+     */
+    public List<Map<String, Object>> selectWhere(String table, String column, Object value) {
+        log("SELECT * FROM %s WHERE %s = '%s'".formatted(table, column, value));
+        Map<String, Map<String, Object>> rows = tables.get(table);
+        if (rows == null) {
+            return List.of();
+        }
+        List<Map<String, Object>> matched = new ArrayList<>();
+        for (Map<String, Object> row : rows.values()) {
+            if (value.equals(row.get(column))) {
+                matched.add(new LinkedHashMap<>(row));
+            }
+        }
+        return List.copyOf(matched);
+    }
 
     public void deleteWhere(String table, String column, Object value) {
         Map<String, Map<String, Object>> rows = tables.get(table);

@@ -4,10 +4,14 @@ import com.example.ordering.adapter.in.web.ApiResponse;
 import com.example.ordering.adapter.in.web.OrderController;
 import com.example.ordering.adapter.out.persistence.GeneratedOrderJpaRepository;
 import com.example.ordering.adapter.out.persistence.JpaOrderRepositoryAdapter;
+import com.example.ordering.application.port.in.GetOrderUseCase;
+import com.example.ordering.application.port.in.OrderNotFoundException;
+import com.example.ordering.application.port.in.OrderView;
 import com.example.ordering.application.port.in.PlaceOrderCommand;
 import com.example.ordering.application.port.in.PlaceOrderResult;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
 import com.example.ordering.application.port.out.OrderRepository;
+import com.example.ordering.application.usecase.GetOrderService;
 import com.example.ordering.application.usecase.PlaceOrderService;
 import com.example.ordering.domain.DomainException;
 import com.example.ordering.domain.Money;
@@ -45,6 +49,11 @@ public final class SelfCheck {
         useCaseTraVeDtoChuKhongPhaiAggregate();
         controllerDichLoiThanhMaHttp();
         luongChayDungThuTuSequenceDiagram();
+        docLaiDonVuaTao();
+        docDonKhongTonTaiNemOrderNotFound();
+        controllerDichOrderNotFoundThanh404();
+        dtoDocTachRoiDtoGhi();
+        luongDocChiGoiDungMotMessage();
         ArchitectureFitness.run();
 
         System.out.println();
@@ -125,7 +134,8 @@ public final class SelfCheck {
 
     private static void controllerDichLoiThanhMaHttp() {
         Fixture fixture = new Fixture();
-        OrderController controller = new OrderController(fixture.placeOrderUseCase);
+        OrderController controller =
+                new OrderController(fixture.placeOrderUseCase, fixture.getOrderUseCase);
 
         ApiResponse created = controller.placeOrder(json("CUS-1", "SKU-A", 2));
         check("dat hang thanh cong tra 201", 201, created.status());
@@ -156,7 +166,8 @@ public final class SelfCheck {
                 recorder.orderRepository(realRepository),
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        new OrderController(useCase).placeOrder(json("CUS-1", "SKU-A", 1));
+        new OrderController(useCase, new GetOrderService(realRepository))
+                .placeOrder(json("CUS-1", "SKU-A", 1));
 
         // Dung hai message ma sequence diagram ve cho PlaceOrderService, dung
         // thu tu do. Them bat ky loi goi nao khac la bai test nay do.
@@ -164,6 +175,88 @@ public final class SelfCheck {
                 "OrderPricingService.calculateTotal",
                 "OrderRepository.save");
         check("luong chay khop sequence diagram", mongDoi, recorder.calls());
+    }
+
+    // --- LUONG DOC: GET /orders/{id} ---------------------------------------
+
+    /**
+     * Ghi roi doc lai: du lieu phai di tron mot vong xuong bang roi quay len
+     * nguyen ven, qua day du cac phep dich domain -> entity -> row -> entity
+     * -> domain -> DTO.
+     */
+    private static void docLaiDonVuaTao() {
+        Fixture fixture = new Fixture();
+        PlaceOrderResult created = fixture.placeOrder("CUS-7", "SKU-A", 3, "129.00");
+
+        OrderView view = fixture.getOrderUseCase.getOrder(created.orderId());
+
+        check("doc lai dung ma don", created.orderId(), view.orderId());
+        check("doc lai dung khach hang", "CUS-7", view.customerId());
+        check("doc lai dung trang thai", "PLACED", view.status());
+        check("doc lai dung tong tien", created.total(), view.total());
+        check("doc lai du so dong hang", 1, view.items().size());
+        check("doc lai dung thanh tien tung dong",
+                new BigDecimal("387.00"), view.items().get(0).lineTotal());
+    }
+
+    /** Khong tim thay la loi cua APPLICATION, khong phai cua domain. */
+    private static void docDonKhongTonTaiNemOrderNotFound() {
+        Fixture fixture = new Fixture();
+        try {
+            fixture.getOrderUseCase.getOrder("ORD-KHONG-CO");
+            check("doc don khong ton tai phai nem OrderNotFoundException", "nem", "khong nem");
+        } catch (OrderNotFoundException expected) {
+            check("doc don khong ton tai nem OrderNotFoundException",
+                    "ORD-KHONG-CO", expected.orderId());
+        }
+    }
+
+    /**
+     * Use case nem exception nghiep vu; CHI Controller biet no thanh so 404.
+     * Grep chu "404" trong ca application lan domain se khong ra ket qua nao.
+     */
+    private static void controllerDichOrderNotFoundThanh404() {
+        Fixture fixture = new Fixture();
+        OrderController controller =
+                new OrderController(fixture.placeOrderUseCase, fixture.getOrderUseCase);
+
+        ApiResponse created = controller.placeOrder(json("CUS-1", "SKU-A", 2));
+        check("dat hang truoc khi doc tra 201", 201, created.status());
+
+        check("doc don co that tra 200", 200, controller.getOrder("ORD-1001").status());
+        check("doc don khong co tra 404", 404, controller.getOrder("ORD-9999").status());
+    }
+
+    /**
+     * DTO doc va DTO ghi la HAI hop dong khac nhau, co y khong dung chung.
+     * Neu gop lam mot thi them truong cho man hinh chi tiet se lam phinh
+     * response cua API tao don.
+     */
+    private static void dtoDocTachRoiDtoGhi() {
+        check("DTO ghi van dung hai truong nhu sequence diagram",
+                2, PlaceOrderResult.class.getRecordComponents().length);
+        check("DTO doc chi tiet hon DTO ghi", true,
+                OrderView.class.getRecordComponents().length
+                        > PlaceOrderResult.class.getRecordComponents().length);
+    }
+
+    /**
+     * Luong doc goi DUNG MOT message ra ngoai: findById. Khong dung toi domain
+     * service, vi doc lai don khong phai la luc tinh lai gia.
+     */
+    private static void luongDocChiGoiDungMotMessage() {
+        Database database = new Database("H2", false);
+        OrderRepository realRepository =
+                new JpaOrderRepositoryAdapter(new GeneratedOrderJpaRepository(database));
+        new PlaceOrderService(new OrderPricingService(), realRepository,
+                Clock.fixed(NOW, ZoneOffset.UTC))
+                .placeOrder(new PlaceOrderCommand("CUS-1",
+                        List.of(new PlaceOrderCommand.Item("SKU-A", 1, "50.00"))));
+
+        SequenceRecorder recorder = new SequenceRecorder();
+        new GetOrderService(recorder.orderRepository(realRepository)).getOrder("ORD-1001");
+
+        check("luong doc chi goi findById", List.of("OrderRepository.findById"), recorder.calls());
     }
 
     // --- ha tang cho bo test -----------------------------------------------
@@ -176,6 +269,7 @@ public final class SelfCheck {
      */
     private static final class Fixture {
         private final PlaceOrderUseCase placeOrderUseCase;
+        private final GetOrderUseCase getOrderUseCase;
 
         private Fixture() {
             Database database = new Database("H2", false);
@@ -183,6 +277,8 @@ public final class SelfCheck {
                     new JpaOrderRepositoryAdapter(new GeneratedOrderJpaRepository(database));
             this.placeOrderUseCase = new PlaceOrderService(
                     new OrderPricingService(), repository, Clock.fixed(NOW, ZoneOffset.UTC));
+            // Hai use case, CHUNG mot repository - dung nhu trong Main.
+            this.getOrderUseCase = new GetOrderService(repository);
         }
 
         private PlaceOrderResult placeOrder(String customerId, String productId,

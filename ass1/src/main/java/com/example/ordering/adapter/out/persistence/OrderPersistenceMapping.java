@@ -3,6 +3,7 @@ package com.example.ordering.adapter.out.persistence;
 import com.example.ordering.adapter.out.persistence.OrderEntity.OrderItemEntity;
 import com.example.ordering.infrastructure.jpa.EntityMapping;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,7 +29,8 @@ public final class OrderPersistenceMapping {
             "order_id",
             OrderEntity::id,
             OrderPersistenceMapping::toRow,
-            OrderPersistenceMapping::toChildRows);
+            OrderPersistenceMapping::toChildRows,
+            OrderPersistenceMapping::fromRows);
 
     private static Map<String, Object> toRow(OrderEntity entity) {
         Map<String, Object> row = new LinkedHashMap<>();
@@ -56,6 +58,38 @@ public final class OrderPersistenceMapping {
         return rows;
     }
 
+
+    /**
+     * CHIEU NGUOC: cac dong du lieu tho -> OrderEntity.
+     *
+     * Trong Spring Boot day la viec Hibernate lam am tham sau moi cau SELECT,
+     * dung chinh bo annotation da dung de ghi. Viet tay ra moi thay no chi la
+     * mot phep dich thuan tuy, khong co phep mau nao ca.
+     */
+    private static OrderEntity fromRows(Map<String, Object> row, List<Map<String, Object>> childRows) {
+        List<OrderItemEntity> items = new ArrayList<>();
+        for (Map<String, Object> child : childRows) {
+            items.add(new OrderItemEntity(
+                    text(child, "order_id"),
+                    text(child, "product_id"),
+                    (Integer) child.get("quantity"),
+                    (BigDecimal) child.get("unit_price")));
+        }
+        return new OrderEntity(
+                text(row, "id"),
+                text(row, "customer_id"),
+                text(row, "status"),
+                (BigDecimal) row.get("subtotal"),
+                (BigDecimal) row.get("discount"),
+                (BigDecimal) row.get("shipping_fee"),
+                (BigDecimal) row.get("total"),
+                text(row, "placed_at"),
+                items);
+    }
+
+    private static String text(Map<String, Object> row, String column) {
+        return String.valueOf(row.get(column));
+    }
 
     private OrderPersistenceMapping() {
     }

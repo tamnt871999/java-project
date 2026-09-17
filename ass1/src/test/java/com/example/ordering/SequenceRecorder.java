@@ -2,12 +2,14 @@ package com.example.ordering;
 
 import com.example.ordering.application.port.out.OrderRepository;
 import com.example.ordering.domain.Order;
+import com.example.ordering.domain.OrderId;
 import com.example.ordering.domain.OrderItem;
 import com.example.ordering.domain.OrderPricingService;
 import com.example.ordering.domain.PriceBreakdown;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Bo ghi hinh cac lifeline trong sequence diagram.
@@ -36,11 +38,27 @@ final class SequenceRecorder {
         };
     }
 
-    /** Vo boc lifeline "OrderRepository (Outbound Port / Application)". */
+    /**
+     * Vo boc lifeline "OrderRepository (Outbound Port / Application)".
+     *
+     * Truoc khi co luong doc, port chi co mot method nen cho nay viet duoc
+     * bang lambda. Nay port co hai method - khong con la functional interface -
+     * nen phai dung anonymous class. Mot thay doi nho o port lam lo ra moi noi
+     * dang phu thuoc vao hinh dang cua no.
+     */
     OrderRepository orderRepository(OrderRepository delegate) {
-        return order -> {
-            calls.add("OrderRepository.save");
-            return delegate.save(order);
+        return new OrderRepository() {
+            @Override
+            public Order save(Order order) {
+                calls.add("OrderRepository.save");
+                return delegate.save(order);
+            }
+
+            @Override
+            public Optional<Order> findById(OrderId orderId) {
+                calls.add("OrderRepository.findById");
+                return delegate.findById(orderId);
+            }
         };
     }
 }

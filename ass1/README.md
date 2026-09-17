@@ -11,13 +11,26 @@ Chạy được chỉ với **JDK 21**, không cần Maven, không có thư vi�
 |---|---|
 | `.\run.ps1 serve` | Chạy REST API tại `http://localhost:8080` (mặc định) |
 | `.\run.ps1 serve 9090` | Chạy ở cổng khác |
-| `.\run.ps1 test` | Chạy 25 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
+| `.\run.ps1 test` | Chạy 38 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
 | `.\run.ps1 build` / `clean` | Chỉ biên dịch / dọn thư mục build |
 
-Thử nhanh:
+### API
+
+| Method | Đường dẫn | Trả về |
+|---|---|---|
+| `POST` | `/orders` | `201 Created` — `{orderId, total}` |
+| `GET` | `/orders/{id}` | `200 OK` — chi tiết đơn, hoặc `404` nếu không có |
+
+Đặt hàng:
 
 ```bash
 curl -X POST http://localhost:8080/orders -H "Content-Type: application/json" -d "{\"customerId\":\"CUS-1\",\"items\":[{\"productId\":\"SKU-A\",\"quantity\":3,\"unitPrice\":129.00}]}"
+```
+
+Đọc lại đơn vừa tạo:
+
+```bash
+curl http://localhost:8080/orders/ORD-1001
 ```
 
 ---
@@ -72,17 +85,40 @@ Thêm bất kỳ lời gọi nào khác — dù code vẫn chạy đúng — là
 
 ---
 
-## 2. Phạm vi: đúng những gì hình vẽ, không hơn
+## 2. Phạm vi: luồng ghi bám sát hình, luồng đọc là phần mở rộng
 
-Sequence diagram chỉ vẽ **một** luồng: đặt hàng. Vì vậy:
+Sequence diagram chỉ vẽ **một** luồng: đặt hàng. Luồng ghi được giữ đúng từng chi
+tiết của hình:
 
 | | |
 |---|---|
-| Endpoint | Đúng **một**: `POST /orders`. Mọi đường dẫn khác trả 404, mọi method khác trả 405. |
 | `PlaceOrderUseCase` | Đúng **một** method: `placeOrder` |
-| `OrderRepository` | Đúng **một** method: `save`. Không có `findById`, không có `nextOrderId` — hình không vẽ chúng. |
+| Message từ `PlaceOrderService` | Đúng **hai**: `calculateTotal` rồi `save` — có test canh |
 | `PlaceOrderResult` | Đúng **hai** trường `{orderId, total}` như hình ghi. Có một test đếm số thành phần của record để không ai âm thầm thêm trường vào hợp đồng API. |
 | Bảng dữ liệu | Hai bảng `orders` + `order_items`, khớp `INSERT orders + items` |
+
+`GET /orders/{id}` **không có trong hình** — nó được thêm vào có chủ đích để bài
+tập có đủ cả hai chiều đọc/ghi. Phần này được đánh dấu rõ ở đây để người chấm phân
+biệt được đâu là yêu cầu của đề, đâu là phần tự thêm:
+
+| Thành phần thêm cho luồng đọc | Vòng |
+|---|---|
+| `GetOrderUseCase`, `OrderView`, `OrderNotFoundException` | 2 — Use Cases |
+| `GetOrderService` | 2 — Use Cases |
+| `OrderRepository.findById` | 2 — Use Cases (outbound port) |
+| `JpaOrderRepositoryAdapter.findById`, `OrderPersistenceMapping.fromRows` | 3 — Interface Adapters |
+| `OrderController.getOrder`, `OrderJsonMapper.toJson(OrderView)` | 3 — Interface Adapters |
+| `Database.selectById/selectWhere`, `JpaRepository.findById` | 4 — Frameworks & Drivers |
+
+Luồng ghi không bị đụng tới một dòng nào: bài test đối chiếu sequence diagram vẫn
+xanh, và `PlaceOrderResult` vẫn đúng hai trường.
+
+### Vì sao DTO đọc tách khỏi DTO ghi
+
+`PlaceOrderResult` trả `{orderId, total}`; `OrderView` trả đầy đủ chi tiết đơn.
+Gộp làm một sẽ khiến mỗi lần màn hình chi tiết cần thêm trường là response của API
+tạo đơn phình theo. Tách ra thì hai bên tiến hoá độc lập — đây là ý tưởng nền tảng
+của **CQRS** (tách mô hình đọc khỏi mô hình ghi).
 
 Mã đơn hàng được cấp **lúc lưu**, đúng như hình: hình không có message hỏi mã đơn
 trước khi save, mã đơn đi ngược ra qua chuỗi `saved entity` → `saved Order (domain)`.

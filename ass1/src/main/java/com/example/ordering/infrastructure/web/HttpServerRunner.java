@@ -9,6 +9,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors;
  * cac annotation @PostMapping / @GetMapping. Viet tay de nhin ro co che ben
  * duoi: URL cong HTTP method tro toi mot phuong thuc cua Controller.
  *
+ROUTES:
  *   POST /orders       -> OrderController.placeOrder(body)
  *   GET  /orders/{id}  -> OrderController.getOrder(id)
  *
@@ -46,7 +48,8 @@ public class HttpServerRunner {
         server.start();
 
         System.out.println("REST API dang chay tai http://localhost:" + port);
-        System.out.println("  POST /orders   dat hang");
+        System.out.println("  POST /orders        dat hang");
+        System.out.println("  GET  /orders/{id}   xem chi tiet don");
         System.out.println("Nhan Ctrl+C de dung.");
     }
 
@@ -80,7 +83,27 @@ public class HttpServerRunner {
             }
             return ApiResponse.methodNotAllowed("POST");
         }
+
+        // GET /orders/{id} - boc bien duong dan ra khoi URL.
+        // Spring lam viec nay bang @GetMapping("/orders/{id}") cong
+        // @PathVariable; o day ta cat chuoi bang tay cho thay ro co che.
+        if (path.startsWith(ORDERS_PREFIX)) {
+            String orderId = path.substring(ORDERS_PREFIX.length());
+            if (!orderId.isBlank() && !orderId.contains("/")) {
+                if (method.equals("GET")) {
+                    return orderController.getOrder(decode(orderId));
+                }
+                return ApiResponse.methodNotAllowed("GET");
+            }
+        }
         return ApiResponse.error(404, "NOT_FOUND", "Khong co endpoint " + method + " " + path);
+    }
+
+    private static final String ORDERS_PREFIX = "/orders/";
+
+    /** Ma don co the chua ky tu da duoc percent-encode tren URL. */
+    private static String decode(String segment) {
+        return URLDecoder.decode(segment, StandardCharsets.UTF_8);
     }
 
     private static String normalize(String path) {

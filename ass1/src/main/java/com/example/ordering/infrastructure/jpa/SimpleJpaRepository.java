@@ -5,13 +5,14 @@ import com.example.ordering.infrastructure.db.Database;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * FRAMEWORKS AND DRIVERS - ban hien thuc cua JpaRepository.
  *
  * Spring Data JPA sinh class nay luc chay bang proxy dong; o day ta viet tay
  * de nhin ro no lam gi: nhan mot entity, tra thanh cac dong du lieu, roi ban
- * cau lenh SQL xuong database.
+ * cau lenh SQL xuong database - va nguoc lai khi doc.
  *
  * Class nay van TONG QUAT - no chi biet EntityMapping va Database, khong biet
  * Order la gi. Do la ly do no nam duoc o vong ngoai cung ma khong lam ban
@@ -47,4 +48,26 @@ public class SimpleJpaRepository<T, ID> implements JpaRepository<T, ID> {
         return entity;
     }
 
+    /**
+     * Doc entity theo khoa chinh.
+     *
+     * Hai cau SELECT lien tiep - mot cho bang cha, mot cho bang con - chinh la
+     * hien tuong N+1 query ma ban gap khi nap @OneToMany o che do EAGER. Giu
+     * nguyen o day de ban nhin thay no trong log SQL thay vi chi nghe ke.
+     */
+    @Override
+    public Optional<T> findById(ID id) {
+        String primaryKey = String.valueOf(id);
+
+        Optional<Map<String, Object>> parentRow = database.selectById(mapping.table(), primaryKey);
+        if (parentRow.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<Map<String, Object>> childRows = mapping.hasChildTable()
+                ? database.selectWhere(mapping.childTable(), mapping.foreignKey(), primaryKey)
+                : List.of();
+
+        return Optional.of(mapping.fromRows().apply(parentRow.get(), childRows));
+    }
 }

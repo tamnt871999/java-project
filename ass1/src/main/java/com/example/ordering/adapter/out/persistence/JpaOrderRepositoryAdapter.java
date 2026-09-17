@@ -5,6 +5,7 @@ import com.example.ordering.domain.Order;
 import com.example.ordering.domain.OrderId;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -38,5 +39,16 @@ public class JpaOrderRepositoryAdapter implements OrderRepository {
         OrderEntity entity = OrderEntityMapper.toEntity(orderWithId);
         OrderEntity savedEntity = jpaRepository.save(entity);
         return OrderEntityMapper.toDomain(savedEntity);
+    }
+
+    /**
+     * Doc lai don hang. Ca hai chieu deu di qua dung mot cai phieu dich:
+     * OrderEntityMapper. Neu mai nay doi sang MongoDB, ta viet mot adapter
+     * khac - chu KHONG sua GetOrderService, vi no chi biet OrderRepository.
+     */
+    @Override
+    public Optional<Order> findById(OrderId orderId) {
+        return jpaRepository.findById(orderId.value())
+                .map(OrderEntityMapper::toDomain);
     }
 }

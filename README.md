@@ -17,8 +17,8 @@ rõ phạm vi của nó, và phần nào là giả định của người làm b
 
 ```bash
 cd ass1
-.\run.ps1 serve          # REST API tai http://localhost:8080
-.\run.ps1 test           # 25 test, gom 5 fitness function canh kien truc
+.\run.ps1 serve          # REST API: POST /orders, GET /orders/{id}
+.\run.ps1 test           # 38 test, gom 5 fitness function canh kien truc
 ```
 
 ```bash

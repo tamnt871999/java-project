@@ -12,6 +12,11 @@ import java.util.Map;
  */
 public record ApiResponse(int status, Object body, Map<String, String> headers) {
 
+    /** 200 OK - ket qua cua mot luong DOC, khong tao ra gi moi. */
+    public static ApiResponse ok(Object body) {
+        return new ApiResponse(200, body, Map.of());
+    }
+
     /** 201 Created - buoc cuoi cung trong sequence diagram. */
     public static ApiResponse created(Object body) {
         return new ApiResponse(201, body, Map.of());
