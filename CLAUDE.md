@@ -258,7 +258,7 @@ Mục này **chỉ chứa những cái bẫy hay mắc đi mắc lại**, không
 xong một bài về chủ đề mới, nếu phát hiện một hiểu nhầm phổ biến thì thêm vào đây; còn kiến
 thức chi tiết thì để trong `README.md` của bài.
 
-Chủ đề chưa có mục ở dưới (Consistency Models, Redis, message queue, sharding…) nghĩa là
+Chủ đề chưa có mục ở dưới (Consistency Models, message queue, sharding…) nghĩa là
 **chưa ai kiểm chứng** — làm bài đó thì áp quy tắc ở mục *Kiến thức* phía trên, đừng suy ra
 từ mục CAP.
 
@@ -275,13 +275,43 @@ từ mục CAP.
   thái bình thường 99% thời gian. Biết PACELC là điểm phân biệt middle.
 - **Mô tả một kịch bản partition cụ thể:** mạng đứt ở đâu, client nào rơi về phía nào, đọc
   trả về gì, ghi được chấp nhận hay từ chối, và khi mạng nối lại thì hoà giải thế nào.
+- **Mặc định của một tham số không có nghĩa là tính năng đã bật.** Ví dụ đã mắc:
+  `synchronous_commit` của PostgreSQL mặc định là `on`, nghe như đã có replication đồng bộ —
+  nhưng khi `synchronous_standby_names` rỗng thì mọi mức khác `off` chỉ đảm bảo flush WAL
+  **cục bộ**. Trước khi viết "DB này mặc định là CP", phải kiểm tra tham số nào thật sự
+  kích hoạt hành vi đó.
+- **Tự động failover không có sẵn.** PostgreSQL thuần không tự bầu leader; phải thêm
+  Patroni + etcd/Consul. Thiết kế CP mà thiếu phần bầu leader thì chỉ là CP trên giấy.
+- **PACELC là thuộc tính của từng LUỒNG, không phải của cả hệ thống.** Câu "hệ này là PA/EL"
+  gần như luôn sai. Một hệ thật cố tình chạy nhiều quadrant: luồng đọc danh sách PA/EL, luồng
+  thanh toán PC/EC. Khi đề liệt kê nhiều luồng thì **phân loại từng luồng một**, và chỉ ra
+  ranh giới giữa chúng. Trong PostgreSQL, `synchronous_commit` còn đặt được ở mức từng
+  transaction (`SET LOCAL`) — tức vế E chỉnh được theo từng câu lệnh.
+- **Câu "chấp nhận trễ tối đa N giây" trong đề là một ràng buộc vận hành, không phải lời
+  khuyên.** Nó phải biến thành một cảnh báo cụ thể (ví dụ: lag > N thì rút replica khỏi pool),
+  nếu không thì chỉ là chữ trong tài liệu.
 - **Gắn DB đã chọn vào quadrant của nó** và nói rõ cấu hình nào đổi được quadrant:
 
 | Database | PACELC | Đổi quadrant bằng |
 |---|---|---|
-| PostgreSQL + replication | PC/EC | `synchronous_commit`, số replica đồng bộ |
+| PostgreSQL + replication | PC/EC | `synchronous_standby_names` (bắt buộc), rồi `synchronous_commit` |
 | MongoDB replica set | PC/EC, chỉnh được sang PA/EL | `writeConcern`, `readPreference` |
 | Cassandra | PA/EL | `consistencyLevel`: ONE / QUORUM / ALL |
+
+### Redis
+
+Đã kiểm chứng trong `redis.conf` bản chính thức. Hai mặc định này hay bị hiểu sai:
+
+- **`maxmemory-policy` mặc định là `noeviction`** — an toàn cho counter. Nhưng đội nào dùng
+  Redis làm cache thường đổi sang `allkeys-lru`. **Nếu counter nằm chung instance đó thì nó bị
+  evict im lặng khi đầy bộ nhớ.** Counter/khoá/hạn mức phải nằm ở instance riêng, giữ
+  `noeviction`.
+- **`appendonly` mặc định là `no`** — restart là mất sạch. Dữ liệu nào cần sống sót qua restart
+  thì phải bật AOF.
+- **Redis không phải nguồn sự thật.** Dùng nó làm van/cache thì thiết kế phải chịu được việc nó
+  sai hoặc mất trắng, và lớp dưới (DB) mới là nơi giữ bất biến.
+- Kiểm tra rồi ghi phải nằm trong **một lệnh nguyên tử** (Lua script hoặc lệnh đơn). `GET` rồi
+  `SET` từ phía ứng dụng luôn có khoảng hở, và ở tải cao thì khoảng hở đó chắc chắn bị khai thác.
 
 ## Nếu đề có "Bonus: implement small API"
 

@@ -7,12 +7,15 @@ khác package gốc, không chia sẻ một dòng code nào.
 |---|---|---|---|---|
 | [`ass1/`](ass1) | REST API đặt hàng | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [ass1/README.md](ass1/README.md) |
 | [`ass2/`](ass2) | REST API ví điện tử — tái cấu trúc anemic sang rich domain model | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [ass2/README.md](ass2/README.md) |
+| [`ass3/`](ass3) | Thiết kế distributed system & quyết định CAP — **bài thiết kế**, code chỉ là bonus | Clean Architecture — hai adapter CP/AP sau một port | Spring Boot 3.4 · Spring MVC · cụm mô phỏng trong bộ nhớ | [ass3/README.md](ass3/README.md) |
+| [`ass4/`](ass4) | PACELC cho hệ thống Flash Sale — **bài thiết kế thuần, không có mã nguồn** | Hai lớp: van Redis + sổ cái PostgreSQL | Tài liệu · Mermaid | [ass4/README.md](ass4/README.md) |
 
 Mỗi thư mục tự chứa mã nguồn, bộ test và tài liệu riêng. README của từng bài ghi rõ phạm vi
 của nó, và phần nào là giả định của người làm bài chứ không lấy từ đề.
 
-Chỉ cần **JDK 21**. Cả hai bài dùng Maven Wrapper nên không phải cài Maven — `mvnw` tự tải về
-lần đầu chạy. `ass1` chạy ở cổng 8080, `ass2` ở 8081 nên bật song song được.
+Chỉ cần **JDK 21**. Mọi bài dùng Maven Wrapper nên không phải cài Maven — `mvnw` tự tải về
+lần đầu chạy. `ass1` chạy ở cổng 8080, `ass2` ở 8081, `ass3` ở 8082 nên bật song song được.
+`ass4` là bài thiết kế thuần — chỉ có tài liệu, không có gì để chạy.
 
 ## Chạy nhanh
 
@@ -25,6 +28,12 @@ cd ass1
 ```bash
 cd ass2
 .\mvnw spring-boot:run   # REST API cong 8081: mo vi, rut tien, khoa vi
+.\mvnw test              # 20 test, gồm 4 fitness function canh kiến trúc
+```
+
+```bash
+cd ass3
+.\mvnw spring-boot:run   # REST API cong 8082: giu cho ton kho + cat/noi mang cum
 .\mvnw test              # 20 test, gồm 4 fitness function canh kiến trúc
 ```
 
