@@ -1,0 +1,6 @@
+app:
+  cap:
+    strategy: cp
+
+server:
+  port: 8082
