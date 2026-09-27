@@ -1,31 +1,40 @@
 # java-project
 
-Bài tập môn kiến trúc phần mềm. Mỗi thư mục là một bài độc lập, chạy được chỉ
-với **JDK 21** — không cần Maven, không có thư viện ngoài.
+Bài tập môn kiến trúc phần mềm. Mỗi thư mục là một bài **độc lập hoàn toàn**: khác đề bài,
+khác package gốc, không chia sẻ một dòng code nào.
 
-| Bài | Đề bài | Kiến trúc | Tài liệu |
-|---|---|---|---|
-| [`ass1/`](ass1) | Triển khai "Place Order" theo sequence diagram mẫu | Clean Architecture — 3 package, 4 vòng | [ass1/README.md](ass1/README.md) |
-| [`ass2/`](ass2) | Tái cấu trúc ví điện tử từ anemic sang rich model | DDD meets Clean Architecture — 3 vòng | [ass2/README.md](ass2/README.md) |
+| Bài | Đề bài | Kiến trúc | Stack | Tài liệu |
+|---|---|---|---|---|
+| [`ass1/`](ass1) | REST API đặt hàng | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [ass1/README.md](ass1/README.md) |
+| [`ass2/`](ass2) | REST API ví điện tử — tái cấu trúc anemic sang rich domain model | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [ass2/README.md](ass2/README.md) |
 
-Hai bài **độc lập hoàn toàn**: khác đề bài, khác package gốc
-(`com.example.ordering` và `com.example.wallet`), không chia sẻ một dòng code nào.
-Mỗi thư mục tự chứa mã nguồn, bộ test và tài liệu riêng — README của từng bài ghi
-rõ phạm vi của nó, và phần nào là giả định của người làm bài chứ không lấy từ đề.
+Mỗi thư mục tự chứa mã nguồn, bộ test và tài liệu riêng. README của từng bài ghi rõ phạm vi
+của nó, và phần nào là giả định của người làm bài chứ không lấy từ đề.
+
+Chỉ cần **JDK 21**. Cả hai bài dùng Maven Wrapper nên không phải cài Maven — `mvnw` tự tải về
+lần đầu chạy. `ass1` chạy ở cổng 8080, `ass2` ở 8081 nên bật song song được.
 
 ## Chạy nhanh
 
 ```bash
 cd ass1
-.\run.ps1 serve          # REST API: POST /orders, GET /orders/{id}
-.\run.ps1 test           # 38 test, gom 5 fitness function canh kien truc
+.\mvnw spring-boot:run   # REST API: POST /api/orders, GET /api/orders/{id}
+.\mvnw test              # 9 test, gồm 4 fitness function canh kiến trúc
 ```
 
 ```bash
 cd ass2
-.\run.ps1 demo           # 5 kich ban cho thay invariant hoat dong
-.\run.ps1 test           # 30 test, gom 5 fitness function canh kien truc
+.\mvnw spring-boot:run   # REST API cong 8081: mo vi, rut tien, khoa vi
+.\mvnw test              # 20 test, gồm 4 fitness function canh kiến trúc
 ```
 
-Quy ước chung: comment trong mã nguồn viết tiếng Việt **không dấu** để tránh lỗi
-encoding khi mở bằng editor cấu hình khác nhau; tài liệu `.md` thì viết đầy đủ dấu.
+## Quy ước chung
+
+Xem [CLAUDE.md](CLAUDE.md) để biết đầy đủ. Ba điểm hay dùng nhất:
+
+- **Không comment trong mã nguồn.** Nếu thật sự cần, viết tiếng Việt **không dấu** để tránh
+  lỗi encoding khi mở bằng editor cấu hình khác. Tài liệu `.md` thì viết đầy đủ dấu.
+- **Tầng `domain/` không được dính annotation của framework** — không Spring, không JPA,
+  không Jackson. Các tầng ngoài thì dùng thoải mái.
+- **Mỗi bài có fitness function** đọc thẳng mã nguồn và fail build nếu có file vượt ranh
+  giới tầng. Luật kiến trúc phải chạy được, không chỉ nằm trong tài liệu.
