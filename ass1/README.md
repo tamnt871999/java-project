@@ -1,242 +1,232 @@
-# BÀI TẬP: TRIỂN KHAI "PLACE ORDER" THEO CLEAN ARCHITECTURE
+# ass1 — Demo Clean Architecture với Spring Boot
 
-> **Đề bài:** Triển khai code "Place Order" cho Clean Architecture theo Sequence sample.
+Bản demo tối giản để hiểu **Clean Architecture**: 14 file source, 2 file test.
+API đặt hàng với 2 endpoint, không có gì thừa.
 
-Toàn bộ bài bám đúng sequence diagram mẫu: tên class khớp từng lifeline, số lời gọi
-khớp từng message, và thứ tự lời gọi được canh bằng một bài test riêng.
-
-Chạy được chỉ với **JDK 21**, không cần Maven, không có thư viện ngoài.
-
-| Lệnh | Tác dụng |
-|---|---|
-| `.\run.ps1 serve` | Chạy REST API tại `http://localhost:8080` (mặc định) |
-| `.\run.ps1 serve 9090` | Chạy ở cổng khác |
-| `.\run.ps1 test` | Chạy 38 bài kiểm thử (`SelfCheck` + `ArchitectureFitness`) |
-| `.\run.ps1 build` / `clean` | Chỉ biên dịch / dọn thư mục build |
-
-### API
-
-| Method | Đường dẫn | Trả về |
-|---|---|---|
-| `POST` | `/orders` | `201 Created` — `{orderId, total}` |
-| `GET` | `/orders/{id}` | `200 OK` — chi tiết đơn, hoặc `404` nếu không có |
-
-Đặt hàng:
+**Stack:** Java 21 · Spring Boot 3.4 · Spring MVC · Spring Data JPA · H2
 
 ```bash
-curl -X POST http://localhost:8080/orders -H "Content-Type: application/json" -d "{\"customerId\":\"CUS-1\",\"items\":[{\"productId\":\"SKU-A\",\"quantity\":3,\"unitPrice\":129.00}]}"
+.\mvnw spring-boot:run      # http://localhost:8080
+.\mvnw test                 # 9 test
 ```
 
-Đọc lại đơn vừa tạo:
+---
+
+## API
+
+### `POST /api/orders`
+
+```json
+{
+  "customerId": "CUS-1",
+  "items": [
+    { "productId": "SKU-A", "quantity": 3, "unitPrice": 129.00 },
+    { "productId": "SKU-B", "quantity": 2, "unitPrice": 12.00 }
+  ]
+}
+```
+
+→ `201 Created`
+
+```json
+{ "orderId": 1, "total": 411.00 }
+```
+
+### `GET /api/orders/{orderId}`
+
+→ `200 OK`
+
+```json
+{
+  "orderId": 1,
+  "customerId": "CUS-1",
+  "placedAt": "2026-09-26T09:43:57.927128Z",
+  "items": [
+    { "productId": "SKU-A", "quantity": 3, "unitPrice": 129.00, "lineTotal": 387.00 },
+    { "productId": "SKU-B", "quantity": 2, "unitPrice": 12.00, "lineTotal": 24.00 }
+  ],
+  "total": 411.00
+}
+```
+
+### Lỗi
+
+| HTTP | `code` | Khi nào |
+|---|---|---|
+| `400` | `BAD_REQUEST` | Sai **cú pháp** — thiếu trường, JSON hỏng |
+| `422` | `BUSINESS_RULE_VIOLATED` | Đúng cú pháp nhưng sai **nghiệp vụ** — `quantity: 0`, sản phẩm trùng |
+| `404` | `ORDER_NOT_FOUND` | Không có đơn hàng với mã này |
+
+`400` là *"tôi không hiểu bạn nói gì"*. `422` là *"tôi hiểu, nhưng không làm được"*.
 
 ```bash
-curl http://localhost:8080/orders/ORD-1001
+curl -X POST http://localhost:8080/api/orders -H "Content-Type: application/json" -d "{\"customerId\":\"CUS-1\",\"items\":[{\"productId\":\"SKU-A\",\"quantity\":3,\"unitPrice\":129.00}]}"
 ```
 
 ---
 
-## 1. Đối chiếu với sequence diagram
+## Clean Architecture — ý tưởng cốt lõi
 
-### 9 lifeline → 9 thành phần trong code
+Ba package, và **một luật duy nhất**:
 
-| Lifeline trong hình | Vai trò | File |
-|---|---|---|
-| `Client` | — | người gọi / `curl` |
-| `OrderController` | Inbound Adapter / Interface Adapters | [`adapter/in/web/OrderController.java`](src/main/java/com/example/ordering/adapter/in/web/OrderController.java) |
-| `PlaceOrderUseCase` | Inbound Port / Application | [`application/port/in/PlaceOrderUseCase.java`](src/main/java/com/example/ordering/application/port/in/PlaceOrderUseCase.java) |
-| `PlaceOrderService` | Interactor / Use Case | [`application/usecase/PlaceOrderService.java`](src/main/java/com/example/ordering/application/usecase/PlaceOrderService.java) |
-| `OrderPricingService` | Domain Service / Entities | [`domain/OrderPricingService.java`](src/main/java/com/example/ordering/domain/OrderPricingService.java) |
-| `OrderRepository` | Outbound Port / Application | [`application/port/out/OrderRepository.java`](src/main/java/com/example/ordering/application/port/out/OrderRepository.java) |
-| `JpaOrderRepositoryAdapter` | Outbound Adapter / Interface Adapters | [`adapter/out/persistence/JpaOrderRepositoryAdapter.java`](src/main/java/com/example/ordering/adapter/out/persistence/JpaOrderRepositoryAdapter.java) |
-| `Spring Data JPA` | Frameworks & Drivers | [`adapter/lib/`](src/main/java/com/example/ordering/adapter/lib) (giả lập) |
-| `H2/Postgres (DB)` | Frameworks & Drivers | [`adapter/lib/Database.java`](src/main/java/com/example/ordering/adapter/lib/Database.java) (giả lập) |
-
-### 14 message → 14 bước trong code
-
-| # | Message trong hình | Nơi thực hiện |
-|---|---|---|
-| 1 | `POST /orders {customerId, items}` | `HttpServerRunner` → `OrderController.placeOrder(body)` |
-| 2 | `placeOrder(Command)` | `OrderController` → `PlaceOrderUseCase` |
-| 3 | `placeOrder(Command)` *(impl dispatch)* | interface → `PlaceOrderService` |
-| 4 | `calculateTotal(items)` | `PlaceOrderService` → `OrderPricingService` |
-| 5 | `total` *(return)* | `PriceBreakdown` trả về |
-| 6 | `save(Order)` | `PlaceOrderService` → `OrderRepository` |
-| 7 | `save(Order)` *(impl dispatch)* | interface → `JpaOrderRepositoryAdapter` |
-| 8 | `save(OrderEntity)` | adapter → `OrderJpaRepository` |
-| 9 | `INSERT orders + items` | `SimpleJpaRepository` → `Database` |
-| 10 | `ok` *(return)* | `Database` |
-| 11 | `saved entity` *(return)* | `OrderEntity` |
-| 12 | `saved Order (domain)` *(return)* | `OrderEntityMapper.toDomain` |
-| 13 | `Result(orderId, total)` *(return)* | `PlaceOrderResult` |
-| 14 | `201 Created {orderId, total}` | `ApiResponse.created` |
-
-### Thứ tự lời gọi được canh bằng test
-
-Bài test `luongChayDungThuTuSequenceDiagram()` ghi lại mọi lời gọi từ
-`PlaceOrderService` đi ra và chốt đúng **hai** message mà hình vẽ cho lifeline này:
-
-```java
-List<String> mongDoi = List.of(
-        "OrderPricingService.calculateTotal",
-        "OrderRepository.save");
+```
+   adapter/       ← biết Spring, biết JPA, biết HTTP
+       ↓ phụ thuộc vào
+   application/   ← chỉ biết domain
+       ↓ phụ thuộc vào
+   domain/        ← không biết gì cả
 ```
 
-Thêm bất kỳ lời gọi nào khác — dù code vẫn chạy đúng — là bài test này đỏ.
+> **The Dependency Rule:** mã ở tầng trong không được biết gì về tầng ngoài.
+
+Mở bất kỳ file nào trong `domain/` — sẽ không thấy một dòng `import org.springframework`
+hay `import jakarta.*` nào. Đó là toàn bộ vấn đề.
+
+### 14 file
+
+```
+src/main/java/com/example/ordering/
+├── OrderingApplication.java              Khởi động Spring Boot
+│
+├── domain/                               Nghiệp vụ thuần — 3 file
+│   ├── Order.java                          Đơn hàng + quy tắc hợp lệ
+│   ├── OrderItem.java                      Dòng hàng + tính thành tiền
+│   └── DomainException.java                Vi phạm quy tắc nghiệp vụ
+│
+├── application/                          Điều phối — 5 file
+│   ├── port/in/PlaceOrderUseCase.java      Cổng VÀO: "tạo đơn hàng"
+│   ├── port/in/GetOrderUseCase.java        Cổng VÀO: "xem đơn hàng"
+│   ├── port/out/OrderRepository.java       Cổng RA: "lưu / đọc ở đâu đó"
+│   ├── usecase/PlaceOrderService.java      Làm việc của cổng vào thứ nhất
+│   └── usecase/GetOrderService.java        Làm việc của cổng vào thứ hai
+│
+└── adapter/                              Nối với thế giới thật — 5 file
+    ├── in/web/OrderController.java         HTTP  → use case
+    ├── in/web/ApiExceptionHandler.java     Exception → mã HTTP
+    ├── out/persistence/OrderJpaEntity.java     Bảng trong database
+    ├── out/persistence/OrderJpaRepository.java Spring Data (1 dòng)
+    └── out/persistence/OrderRepositoryAdapter.java  use case → JPA
+```
 
 ---
 
-## 2. Phạm vi: luồng ghi bám sát hình, luồng đọc là phần mở rộng
+## Điểm mấu chốt: `OrderRepository`
 
-Sequence diagram chỉ vẽ **một** luồng: đặt hàng. Luồng ghi được giữ đúng từng chi
-tiết của hình:
+Đây là thứ đáng hiểu nhất trong cả dự án. Nếu chỉ nhớ một điều, hãy nhớ điều này.
 
-| | |
+`OrderRepository` là interface nằm ở **`application/port/out/`** — tức là tầng
+`application` **sở hữu** nó. Còn class hiện thực nó (`OrderRepositoryAdapter`) lại nằm ở
+tầng `adapter` **bên ngoài**:
+
+```
+application/port/out/OrderRepository          ← interface, tầng trong sở hữu
+          ▲
+          │ implements
+adapter/out/persistence/OrderRepositoryAdapter ← tầng ngoài, import NGƯỢC VÀO TRONG
+```
+
+Kết quả:
+
+- **Lúc chạy:** use case gọi *ra ngoài* → xuống database.
+- **Lúc biên dịch:** `adapter` import *vào trong*, không có chiều ngược lại.
+
+Đó là **Dependency Inversion** — mũi tên phụ thuộc ngược chiều với mũi tên lời gọi.
+
+So với cách viết Spring quen thuộc:
+
+| Spring MVC 3 tầng thông thường | Ở đây |
 |---|---|
-| `PlaceOrderUseCase` | Đúng **một** method: `placeOrder` |
-| Message từ `PlaceOrderService` | Đúng **hai**: `calculateTotal` rồi `save` — có test canh |
-| `PlaceOrderResult` | Đúng **hai** trường `{orderId, total}` như hình ghi. Có một test đếm số thành phần của record để không ai âm thầm thêm trường vào hợp đồng API. |
-| Bảng dữ liệu | Hai bảng `orders` + `order_items`, khớp `INSERT orders + items` |
+| `interface OrderRepository extends JpaRepository<OrderEntity, Long>` | `interface OrderRepository` không extends gì cả |
+| Interface thuộc tầng persistence → service phải import **xuống** | Interface thuộc tầng application → persistence import **lên** |
+| Service nhận `OrderEntity` (kiểu của JPA) | Use case nhận `Order` (kiểu của domain) |
 
-`GET /orders/{id}` **không có trong hình** — nó được thêm vào có chủ đích để bài
-tập có đủ cả hai chiều đọc/ghi. Phần này được đánh dấu rõ ở đây để người chấm phân
-biệt được đâu là yêu cầu của đề, đâu là phần tự thêm:
+**Được gì?** Đổi H2 sang PostgreSQL, hay sang MongoDB, chỉ cần viết một class khác cũng
+`implements OrderRepository`. Không một dòng nào trong `domain/` và `application/` phải sửa.
 
-| Thành phần thêm cho luồng đọc | Vòng |
+---
+
+## Đường đi của một request
+
+```
+POST /api/orders
+   │
+   ├─ OrderController              nhận JSON, @Valid kiểm tra cú pháp
+   │      ↓ đổi Request thành Command
+   ├─ PlaceOrderUseCase            (interface — controller chỉ biết tới đây)
+   ├─ PlaceOrderService            điều phối
+   │      ↓
+   ├─ Order.place(...)             domain kiểm tra quy tắc nghiệp vụ
+   │      ↓
+   ├─ OrderRepository.save()       (interface — use case chỉ biết tới đây)
+   ├─ OrderRepositoryAdapter       đổi Order thành OrderJpaEntity
+   ├─ OrderJpaRepository           Spring Data
+   └─ Hibernate → H2               INSERT orders; INSERT order_items
+```
+
+Rồi đi ngược lại đúng đường cũ để trả về `201`.
+
+Để ý dữ liệu **đổi hình dạng 3 lần**, mỗi lần ở một ranh giới:
+
+```
+JSON  →  PlaceOrderRequest  →  PlaceOrderCommand  →  Order  →  OrderJpaEntity  →  SQL
+         (tầng web)            (tầng application)     (domain)   (tầng adapter)
+```
+
+Nghe thừa, nhưng chính nó giữ cho: đổi tên một cột trong database **không** làm đổi tên
+một trường trên JSON API.
+
+---
+
+## Hai loại kiểm tra — đừng lẫn lộn
+
+| Loại | Ở đâu | Ví dụ | Trả về |
+|---|---|---|---|
+| **Cú pháp** — "body có đúng hình dạng không?" | `@NotBlank`, `@NotNull` trong `OrderController.PlaceOrderRequest` | thiếu `customerId` | `400` |
+| **Nghiệp vụ** — "giá trị này có hợp lệ không?" | `OrderItem`, `Order.place()` trong `domain/` | `quantity: 0`, sản phẩm trùng | `422` |
+
+`quantity: 0` là một số nguyên hợp lệ nên nó **đi lọt** `@Valid`. Chính `OrderItem` trong
+domain mới là chỗ từ chối nó. Đó là lý do quy tắc nghiệp vụ phải nằm trong `domain/`, không
+nằm trong Controller.
+
+---
+
+## Test
+
+```bash
+.\mvnw test
+```
+
+| File | Kiểm gì |
 |---|---|
-| `GetOrderUseCase`, `OrderView`, `OrderNotFoundException` | 2 — Use Cases |
-| `GetOrderService` | 2 — Use Cases |
-| `OrderRepository.findById` | 2 — Use Cases (outbound port) |
-| `JpaOrderRepositoryAdapter.findById`, `OrderPersistenceMapping.fromRows` | 3 — Interface Adapters |
-| `OrderController.getOrder`, `OrderJsonMapper.toJson(OrderView)` | 3 — Interface Adapters |
-| `Database.selectById/selectWhere`, `JpaRepository.findById` | 4 — Frameworks & Drivers |
+| `OrderApiTest` | Gọi thật qua cả 4 tầng: tạo đơn, đọc lại, `404`, `422`, `400` |
+| `ArchitectureFitnessTest` | Đọc source và **fail build** nếu có file vượt ranh giới tầng |
 
-Luồng ghi không bị đụng tới một dòng nào: bài test đối chiếu sequence diagram vẫn
-xanh, và `PlaceOrderResult` vẫn đúng hai trường.
+`ArchitectureFitnessTest` canh 4 luật:
 
-### Vì sao DTO đọc tách khỏi DTO ghi
+```
+domain khong phu thuoc application hay adapter
+domain khong dinh cong nghe ha tang
+application khong phu thuoc adapter
+adapter web khong phu thuoc adapter persistence
+```
 
-`PlaceOrderResult` trả `{orderId, total}`; `OrderView` trả đầy đủ chi tiết đơn.
-Gộp làm một sẽ khiến mỗi lần màn hình chi tiết cần thêm trường là response của API
-tạo đơn phình theo. Tách ra thì hai bên tiến hoá độc lập — đây là ý tưởng nền tảng
-của **CQRS** (tách mô hình đọc khỏi mô hình ghi).
-
-Mã đơn hàng được cấp **lúc lưu**, đúng như hình: hình không có message hỏi mã đơn
-trước khi save, mã đơn đi ngược ra qua chuỗi `saved entity` → `saved Order (domain)`.
-Đây chính là ngữ nghĩa `@GeneratedValue` của JPA.
+Luật viết trong tài liệu thì không ai bắt buộc phải đọc. Chỉ cần một người gõ
+`import jakarta.persistence` vào `Order.java` cho nhanh là kiến trúc âm thầm sụp đổ mà
+build vẫn xanh. Bài test này biến luật thành ràng buộc chạy được.
 
 ---
 
-## 3. Giả định của người làm bài
+## Những gì đã lược bỏ cho đơn giản
 
-Sequence diagram là spec về **cấu trúc** (class nào, gọi gì, theo thứ tự nào). Nó
-vẽ `calculateTotal(items) → total` nhưng **không quy định công thức tính giá**.
-Phần dưới đây là **giả định tự đặt ra để `calculateTotal` có việc mà làm**, không
-phải lấy từ đề bài:
+Đây là bản demo, không phải bản production. Dự án thật nên có thêm:
 
-| Quy tắc | Giá trị |
+| Bỏ gì | Thật ra nên |
 |---|---|
-| Tạm tính | Σ (đơn giá × số lượng) |
-| Giảm giá | 10% khi tạm tính ≥ 500.00 |
-| Phí ship | Miễn phí khi tạm tính ≥ 100.00, ngược lại 9.99 |
-| Tổng cộng | tạm tính − giảm giá + phí ship |
+| `Instant.now()` gọi thẳng trong use case | Tiêm `Clock` để test đóng băng được thời gian |
+| `@Service` trên use case | Cách "sạch" hơn: khai báo `@Bean` trong một `@Configuration` để `application/` không import Spring |
+| Không có `@Transactional` | Cần khi một use case ghi nhiều bảng trong cùng một giao dịch |
+| `ddl-auto: create-drop`, H2 in-memory | Database thật + Flyway quản lý schema |
+| Không có Value Object (`Money`, `Quantity`) | Bọc `BigDecimal`/`int` lại để giá trị sai không tồn tại được |
+| Không tính giảm giá / phí ship | Khi logic giá phức tạp lên, tách ra một Domain Service riêng |
 
-Ba con số ngưỡng nằm gọn trong `OrderPricingService` dưới dạng hằng số có tên, nên
-đổi chính sách chỉ sửa một file. Nếu đề bài thật có biểu giá khác, thay các hằng số
-đó là xong — không tầng nào khác phải đụng tới.
-
-Các con số trung gian (tạm tính, giảm giá, phí ship) vẫn được tính và vẫn ghi đầy
-đủ xuống bảng `orders`; chúng chỉ **không** nằm trong hợp đồng trả về, vì hình chỉ
-ghi `Result(orderId, total)`.
-
----
-
-## 4. Ba package, bốn vòng
-
-```
-   adapter/lib   Vòng 4  Frameworks & Drivers  (giả lập Spring Data JPA + H2)
-   adapter       Vòng 3  Interface Adapters    (Controller, Repository Adapter)
-   application   Vòng 2  Use Cases             (inbound port, interactor, outbound port)
-   domain        Vòng 1  Entities              (aggregate, value object, domain service)
-
-   THE DEPENDENCY RULE: mã nguồn ở vòng trong KHÔNG biết gì về vòng ngoài.
-```
-
-Chỉ có **ba package gốc**. Vòng 4 không thành package riêng vì trong dự án thật
-nó **không phải mã nguồn của bạn** — nó là Spring Boot, Hibernate, driver JDBC,
-nằm trong `pom.xml`. Ở đây phải tự viết nên chúng được gom vào `adapter/lib/`,
-và xoá nguyên folder đó là chuyển được sang thư viện thật.
-
-**Điểm mấu chốt:** `OrderRepository` là interface do tầng **application** sở hữu,
-còn `JpaOrderRepositoryAdapter` hiện thực nó lại nằm ở vòng **adapter** bên ngoài.
-Lúc *chạy* thì use case gọi ra ngoài, nhưng lúc *biên dịch* thì mũi tên phụ thuộc
-vẫn chỉ vào trong. Đó là **Dependency Inversion**.
-
-### Luật kiến trúc được THỰC THI, không chỉ được ghi chép
-
-`.\run.ps1 test` chạy 5 **fitness function** đọc thẳng mã nguồn và fail build nếu
-có file vượt ranh giới:
-
-```
-[OK]   tang 'domain' khong phu thuoc application, adapter
-[OK]   tang 'application' khong phu thuoc adapter
-[OK]   tang 'domain' khong dinh cong nghe ha tang (spring, jakarta, javax, sql, net)
-[OK]   tang 'application' khong dinh cong nghe ha tang
-[OK]   tang 'adapter/lib' khong phu thuoc com.example.ordering.
-```
-
-Vòng 3 **được phép** chạm vào framework — đó đúng là việc của nó. Cái bị cấm
-tuyệt đối là domain và application chạm vào hạ tầng.
-
-Rule cuối canh một điều khác: `adapter/lib/` phải **thật sự tổng quát**. Bốn file
-trong đó không được import bất cứ thứ gì của dự án — chúng không biết `Order` hay
-`OrderEntity` tồn tại. Ngay khi một file trong đó import `com.example.ordering`,
-nó thôi là thư viện, và lời hứa "xoá folder này để thay bằng dependency thật"
-không còn giữ được.
-
----
-
-## 5. Cấu trúc thư mục
-
-```
-ass1/
-├── pom.xml
-├── run.ps1
-└── src/
-    ├── main/java/com/example/ordering/
-    │   ├── Main.java                     ← COMPOSITION ROOT (chỉ lắp ráp)
-    │   │                                    tương đương @SpringBootApplication
-    │   ├── domain/                       ← VÒNG 1 (Entities)
-    │   │   ├── Order.java                   Aggregate Root
-    │   │   ├── OrderPricingService.java     Domain Service — lifeline trong hình
-    │   │   ├── OrderItem, PriceBreakdown
-    │   │   ├── Money, Quantity              Value Object
-    │   │   ├── OrderId, CustomerId, ProductId
-    │   │   └── OrderStatus, DomainException
-    │   ├── application/                  ← VÒNG 2 (Use Cases)
-    │   │   ├── port/in/                     PlaceOrderUseCase, PlaceOrderCommand,
-    │   │   │                                PlaceOrderResult, GetOrderUseCase,
-    │   │   │                                OrderView, OrderNotFoundException
-    │   │   ├── port/out/OrderRepository.java
-    │   │   └── usecase/                     PlaceOrderService, GetOrderService
-    │   └── adapter/                      ← VÒNG 3 (Interface Adapters)
-    │       ├── in/web/                      OrderController, OrderJsonMapper,
-    │       │                                ApiResponse, Json, JsonSerializer,
-    │       │                                HttpServerRunner
-    │       ├── out/persistence/             JpaOrderRepositoryAdapter, OrderEntity,
-    │       │                                OrderEntityMapper, OrderJpaRepository,
-    │       │                                GeneratedOrderJpaRepository,
-    │       │                                OrderPersistenceMapping
-    │       └── lib/                      ← VÒNG 4 — giả lập THƯ VIỆN
-    │                                        Database          (≈ H2/Postgres)
-    │                                        JpaRepository     (≈ Spring Data)
-    │                                        SimpleJpaRepository, EntityMapping
-    └── test/java/com/example/ordering/
-        ├── SelfCheck.java                   33 test nghiệp vụ
-        ├── SequenceRecorder.java            ghi lại thứ tự lời gọi
-        └── ArchitectureFitness.java         5 fitness function
-```
-
-> Bốn file trong `adapter/lib/` **giả lập** Spring Data JPA và H2 bằng JDK thuần,
-> để bài chạy được mà không cần tải thư viện. Chữ ký hàm giữ giống bản thật, nên
-> khi chuyển sang Spring Boot chỉ việc **xoá nguyên folder đó** và đổi import.
-> Có một fitness function canh để chúng không lỡ biết gì về `Order`.
+Mỗi dòng trên là một bước nâng cấp — làm từng cái một khi bạn đã nắm chắc phần lõi.

@@ -1,16 +1,18 @@
 package com.example.ordering.application.port.in;
 
-/**
- * INBOUND PORT - lifeline "PlaceOrderUseCase (Inbound Port / Application)".
- *
- * Hop dong tra loi cau hoi "ung dung nay lam duoc gi", viet duoi goc nhin
- * nghiep vu chu khong phai goc nhin ky thuat.
- *
- * Moi driving adapter (REST controller, CLI, message consumer, bo test) deu
- * goi qua interface nay va CHI qua no. Doi adapter khong lam thay doi mot dong
- * nao ben trong use case.
- */
+import java.math.BigDecimal;
+import java.util.List;
+
 public interface PlaceOrderUseCase {
 
     PlaceOrderResult placeOrder(PlaceOrderCommand command);
+
+    record PlaceOrderCommand(String customerId, List<Item> items) {
+
+        public record Item(String productId, int quantity, BigDecimal unitPrice) {
+        }
+    }
+
+    record PlaceOrderResult(Long orderId, BigDecimal total) {
+    }
 }

@@ -1,87 +1,75 @@
 package com.example.ordering.adapter.in.web;
 
 import com.example.ordering.application.port.in.GetOrderUseCase;
-import com.example.ordering.application.port.in.OrderNotFoundException;
-import com.example.ordering.application.port.in.OrderView;
-import com.example.ordering.application.port.in.PlaceOrderCommand;
-import com.example.ordering.application.port.in.PlaceOrderResult;
+import com.example.ordering.application.port.in.GetOrderUseCase.OrderView;
 import com.example.ordering.application.port.in.PlaceOrderUseCase;
-import com.example.ordering.domain.DomainException;
+import com.example.ordering.application.port.in.PlaceOrderUseCase.PlaceOrderCommand;
+import com.example.ordering.application.port.in.PlaceOrderUseCase.PlaceOrderResult;
 
-import java.util.Objects;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
-/**
- * INBOUND ADAPTER - lifeline "OrderController (Inbound Adapter / Interface
- * Adapters)" trong sequence diagram.
- *
- * Chu y kieu cua truong: PlaceOrderUseCase, KHONG phai PlaceOrderService.
- * Controller chi biet INBOUND PORT, khong biet ai hien thuc no. Nho vay bo test
- * co the tiem mot ban gia vao ma khong can dung ca he thong.
- *
- * Ba viec duy nhat Controller duoc lam:
- *   1. Nhan du lieu tho tu ben ngoai (chuoi JSON).
- *   2. Dich thanh Command va goi use case qua port.
- *   3. Dich ket qua / exception thanh ngon ngu HTTP.
- *
- * BANG DICH LOI - trach nhiem quan trong nhat cua Controller:
- *   IllegalArgumentException (JSON hong, thieu truong) -> 400 Bad Request
- *   DomainException (vi pham quy tac nghiep vu)        -> 422 Unprocessable Entity
- *   OrderNotFoundException                             -> 404 Not Found
- *
- * Domain va use case khong he biet nhung con so nay ton tai.
- */
-public class OrderController {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/orders")
+class OrderController {
 
     private final PlaceOrderUseCase placeOrderUseCase;
     private final GetOrderUseCase getOrderUseCase;
 
-    // Controller phu thuoc vao HAI inbound port rieng biet, khong phai mot
-    // interface OrderService gop chung. Doi lay: co the tiem ban gia cho tung
-    // use case, va them use case moi khong lam doi chu ky cua cai da co.
-    public OrderController(PlaceOrderUseCase placeOrderUseCase, GetOrderUseCase getOrderUseCase) {
-        this.placeOrderUseCase = Objects.requireNonNull(placeOrderUseCase, "placeOrderUseCase must not be null");
-        this.getOrderUseCase = Objects.requireNonNull(getOrderUseCase, "getOrderUseCase must not be null");
+    OrderController(PlaceOrderUseCase placeOrderUseCase, GetOrderUseCase getOrderUseCase) {
+        this.placeOrderUseCase = placeOrderUseCase;
+        this.getOrderUseCase = getOrderUseCase;
     }
 
-    /** POST /orders */
-    public ApiResponse placeOrder(String requestBody) {
-        PlaceOrderCommand command;
-        try {
-            command = OrderJsonMapper.toCommand(Json.parse(requestBody));
-        } catch (RuntimeException badRequest) {
-            return ApiResponse.error(400, "BAD_REQUEST", badRequest.getMessage());
-        }
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    PlaceOrderResult placeOrder(@Valid @RequestBody PlaceOrderRequest request) {
+        List<PlaceOrderCommand.Item> items = request.items().stream()
+                .map(item -> new PlaceOrderCommand.Item(
+                        item.productId(), item.quantity(), item.unitPrice()))
+                .toList();
 
-        try {
-            PlaceOrderResult result = placeOrderUseCase.placeOrder(command);
-            return ApiResponse.created(OrderJsonMapper.toJson(result));
-        } catch (DomainException violated) {
-            return ApiResponse.error(422, "BUSINESS_RULE_VIOLATED", violated.getMessage());
-        } catch (IllegalArgumentException invalid) {
-            return ApiResponse.error(400, "BAD_REQUEST", invalid.getMessage());
-        }
+        return placeOrderUseCase.placeOrder(new PlaceOrderCommand(request.customerId(), items));
     }
 
-    /**
-     * GET /orders/{id}
-     *
-     * Ngan hon placeOrder vi khong co body de parse: tham so duy nhat da nam
-     * san tren duong dan, do tang ha tang boc ra.
-     *
-     * Van la cung mot cong viec: dich ngon ngu HTTP thanh loi goi use case,
-     * roi dich ket qua va exception nguoc lai thanh ma trang thai HTTP.
-     */
-    public ApiResponse getOrder(String orderId) {
-        try {
-            OrderView view = getOrderUseCase.getOrder(orderId);
-            return ApiResponse.ok(OrderJsonMapper.toJson(view));
-        } catch (OrderNotFoundException notFound) {
-            // Use case nem exception nghiep vu, Controller doi thanh 404.
-            // Day la DUY NHAT mot noi trong he thong biet so 404 ton tai.
-            return ApiResponse.error(404, "ORDER_NOT_FOUND", notFound.getMessage());
-        } catch (IllegalArgumentException invalid) {
-            return ApiResponse.error(400, "BAD_REQUEST", invalid.getMessage());
-        }
+    @GetMapping("/{orderId}")
+    OrderView getOrder(@PathVariable("orderId") Long orderId) {
+        return getOrderUseCase.getOrder(orderId);
     }
 
+    record PlaceOrderRequest(
+
+            @NotBlank(message = "Thieu truong bat buoc: customerId")
+            String customerId,
+
+            @NotEmpty(message = "Truong items phai la mang khong rong")
+            @Valid
+            List<Item> items) {
+
+        record Item(
+
+                @NotBlank(message = "Thieu truong bat buoc: productId")
+                String productId,
+
+                @NotNull(message = "Thieu truong bat buoc: quantity")
+                Integer quantity,
+
+                @NotNull(message = "Thieu truong bat buoc: unitPrice")
+                BigDecimal unitPrice) {
+        }
+    }
 }

@@ -1,7 +1,9 @@
-/out/
-/out-test/
 /target/
 *.class
 .idea/
 *.iml
 .vscode/
+.settings/
+.classpath
+.project
+.mvn/wrapper/maven-wrapper.jar
