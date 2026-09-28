@@ -1,4 +1,4 @@
-package com.example.inventory.application.port.in;
+package com.example.inventory.exception;
 
 public class SkuNotFoundException extends RuntimeException {
 

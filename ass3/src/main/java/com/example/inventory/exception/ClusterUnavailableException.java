@@ -1,4 +1,4 @@
-package com.example.inventory.application.port.out;
+package com.example.inventory.exception;
 
 public class ClusterUnavailableException extends RuntimeException {
 
