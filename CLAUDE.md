@@ -13,21 +13,61 @@ và kiến trúc, không phải xây hệ thống production.
 
 ## 1. Luật phạm vi — đọc trước mọi thứ khác
 
-**Mỗi `assN/` chỉ giải quyết đúng đề của nó. Không hơn. Luật này bắt buộc, không ngoại lệ.**
+**Đề bài là nguồn DUY NHẤT quyết định bài nộp gồm những gì. Luật này thắng mọi mục khác trong
+file này. Không có ngoại lệ, không có trường hợp đặc biệt.**
 
-- Đề không nhắc tới chủ đề nào thì **không đưa chủ đề đó vào**, kể cả khi nó liên quan chặt và
-  mình biết rõ. *Đã mắc: đề `ass3` chỉ hỏi CAP, tự thêm PACELC vào — phải gỡ ra.*
-- **Khuôn ở Phần A / Phần B là gợi ý về hình thức, không phải giấy phép thêm nội dung.** Mục nào
-  đề không đòi (diagram, bảng so sánh, bonus API…) thì **hỏi trước khi làm**, đừng tự đưa vào
-  rồi mới báo.
-- Đang làm bài này thì **không sửa bài khác**. Thấy bài cũ có vấn đề thì **báo**, để người dùng
-  quyết.
-- **Không chia sẻ code giữa các bài.** Copy `pom.xml` / `mvnw` thì được; import chéo package
-  thì không.
-- Thấy thứ hay nhưng ngoài đề → **nói một dòng ở cuối câu trả lời**, đừng tự nhét vào bài.
+### Bước bắt buộc trước khi viết dòng đầu tiên
 
-> **Tự kiểm trước khi báo xong:** mở lại đề, đối chiếu **từng gạch đầu dòng** với mục trong
-> `README.md` của bài. Mục nào không map được vào yêu cầu nào → đó là out scope, gỡ ra.
+Chép từng gạch đầu dòng của đề ra thành **danh sách kiểm**. Mỗi thứ sắp tạo ra — mỗi endpoint,
+mỗi trường JSON, mỗi mục tài liệu, mỗi file cấu hình — phải chỉ ra được nó phục vụ gạch đầu dòng
+nào. **Chỉ không ra thì không làm.**
+
+### Phân biệt HÌNH THỨC với NỘI DUNG
+
+Đây là chỗ sai đi sai lại nhiều nhất, và là lý do thật sự của mọi lần out scope.
+
+| | Là gì | Ai quyết định |
+|---|---|---|
+| **Hình thức** | *Viết thế nào*: đặt tên, chia package, constructor injection, `@RestControllerAdvice`, cách viết test, cách trình bày README, template slide | Các mục Phần A / Phần B bên dưới |
+| **Nội dung** | *Bài có những gì*: endpoint nào, trường nào trong response, mã lỗi nào, mục nào trong tài liệu, chủ đề nào, hạ tầng nào | **Chỉ đề bài** |
+
+> **Mọi danh sách trong Phần A và Phần B là quy ước hình thức, KHÔNG phải danh mục phải có.**
+> Phần B liệt kê "Architecture diagram" không có nghĩa mọi bài thiết kế đều phải có diagram — chỉ
+> bài nào **đề đòi** diagram mới có. Phần A nói cách dịch lỗi không có nghĩa phải phủ hết mọi mã
+> lỗi trong bảng — chỉ những mã mà endpoint trong đề thật sự sinh ra.
+
+### Out scope trông như thế nào
+
+Bốn dòng dưới đây đều là việc **đã thật sự làm rồi phải gỡ đi**, không phải ví dụ giả định:
+
+| Đã tự thêm | Đề có đòi không |
+|---|---|
+| PACELC trong `ass3` | Không — đề chỉ hỏi CAP |
+| Lớp "van Redis" trong `ass4` | Không — tự nghĩ ra, còn trái luật "không tự thêm cache" |
+| Cây quyết định, giả định, bảng tổng hợp, sơ đồ, "khi nào sai" trong `ass5` | Không — đề chỉ hỏi 3 câu cho mỗi tính năng |
+| Trường `rank`, mã lỗi `503` trong `ass6` | Không — đề chỉ hỏi 2 endpoint |
+
+**Không phải chỉ chủ đề lớn mới là out scope.** Một trường thừa trong response, một endpoint
+thừa, một mã lỗi thừa, một mục thừa trong README — đều là out scope y như nhau.
+
+Hai lý lẽ hay dùng để tự cho phép, cả hai đều sai:
+- *"Nó liên quan chặt và mình biết rõ."* → Không liên quan. Đề không hỏi.
+- *"`CLAUDE.md` có liệt kê mục này."* → Đó là hình thức. Xem bảng trên.
+
+### Thấy thứ hay nhưng ngoài đề
+
+**Không làm trước rồi báo sau.** Nói **một dòng** ở cuối câu trả lời rồi **dừng, chờ người dùng
+quyết**. Tự làm rồi xin phép sau vẫn là vi phạm, dù có ghi chú rõ ràng đến đâu — vì người dùng
+phải đi dọn thứ họ không yêu cầu.
+
+### Không tràn sang bài khác
+
+Đang làm bài này thì **không sửa bài khác**; thấy bài cũ có vấn đề thì **báo** để người dùng
+quyết. Copy `pom.xml` / `mvnw` thì được, **import chéo package thì không**.
+
+> **Tự kiểm bắt buộc trước khi báo xong:** mở lại đề, đối chiếu **từng gạch đầu dòng** với **từng
+> thứ đã tạo ra** — từng endpoint, từng trường JSON, từng mục README, từng file. Thứ nào không
+> map được vào một yêu cầu nào → gỡ ra trước khi trả lời.
 
 ---
 
@@ -128,6 +168,7 @@ com.example.<domain>/
 
 Đặt trong `@RestControllerAdvice` — **nơi duy nhất** biết con số HTTP.
 Body lỗi luôn là `{ "code": ..., "message": ... }`.
+**Chỉ map những lỗi mà endpoint trong đề thật sự sinh ra**, không phủ cho đủ bảng.
 
 | Exception | HTTP | `code` |
 |---|---|---|
@@ -187,7 +228,8 @@ test đọc thẳng mã nguồn. Test của `domain/` mà cần Spring context �
 
 # PHẦN B — bài thiết kế
 
-`assN/README.md` **chính là bài nộp**. Cấu trúc:
+`assN/README.md` **chính là bài nộp**. Dưới đây là **khuôn trình bày**, không phải danh
+mục phải có — chỉ làm mục nào đề đòi (xem [Luật phạm vi](#1-luật-phạm-vi--đọc-trước-mọi-thứ-khác)):
 
 1. **Đề bài** — chép nguyên văn, để người chấm đối chiếu.
 2. **Giả định** — quy mô, tỉ lệ đọc/ghi, độ trễ, mức chấp nhận mất dữ liệu. Không có giả định
@@ -239,7 +281,6 @@ Mục này **chỉ ghi bẫy về cách làm việc**, không chứa kiến th�
 - **Mặc định của một tham số ≠ tính năng đã bật.** `synchronous_commit` của PostgreSQL mặc
   định là `on`, nhưng khi `synchronous_standby_names` rỗng thì nó chỉ flush WAL **cục bộ**.
   Trước khi viết "mặc định đã là X", kiểm tra tham số nào thật sự kích hoạt hành vi đó.
-- **Đừng suy kiến thức chủ đề này sang chủ đề khác.** Chưa kiểm chứng thì nói là chưa chắc.
 - **Xoá code thì xoá cả tài liệu trỏ tới nó.**
 - **Heredoc nhiều khối trong một lệnh bash hay vỡ.** Nội dung dài thì ghi bằng công cụ ghi file.
 - **Sửa file hàng loạt bằng script thì cẩn thận string literal và text block.** Regex ngây thơ
@@ -252,6 +293,7 @@ Kiến thức đã kiểm chứng, kèm link nguồn, nằm ở:
 | CAP, quorum, PostgreSQL + Patroni, `pg_rewind` | `ass3/README.md` |
 | PACELC, knob replication, thundering herd, idempotency | `ass4/README.md` |
 | Consistency model, session guarantees, bộ đếm không idempotent | `ass5/README.md` |
+| Redis Sorted Set, `ZADD` / `ZREVRANGE`, replication master–replica | `ass6/README.md` |
 
 ---
 
