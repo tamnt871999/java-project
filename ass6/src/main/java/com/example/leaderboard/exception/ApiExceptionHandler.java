@@ -1,5 +1,6 @@
 package com.example.leaderboard.exception;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +21,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiError> typeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.badRequest()
                 .body(new ApiError("BAD_REQUEST", "Tham so '" + ex.getName() + "' phai la so nguyen"));
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    public ResponseEntity<ApiError> productNotFound(ProductNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError("PRODUCT_NOT_FOUND", ex.getMessage()));
     }
 
     @ExceptionHandler(BusinessRuleException.class)
