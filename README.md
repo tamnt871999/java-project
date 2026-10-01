@@ -10,7 +10,8 @@ khác package gốc, không chia sẻ một dòng code nào.
 | [`ass3/`](ass3) | Thiết kế distributed system & quyết định CAP — **bài thiết kế**, code chỉ là bonus | Spring Boot thường + Strategy pattern (CP / AP) | Spring Boot 3.4 · Spring MVC · cụm mô phỏng trong bộ nhớ | [ass3/README.md](ass3/README.md) |
 | [`ass4/`](ass4) | PACELC cho hệ thống Flash Sale — **bài thiết kế thuần, không có mã nguồn** | Một cụm PostgreSQL, mỗi luồng một cặp knob replication | Tài liệu · Mermaid | [ass4/README.md](ass4/README.md) · [bản PDF](ass4/ass4-PACELC-Flash-Sale.pdf) |
 | [`ass5/`](ass5) | Consistency model cho từng tính năng mạng xã hội — **bài thiết kế thuần, không có mã nguồn** | Mỗi tính năng một mô hình riêng, chọn theo bất biến của chính nó | Tài liệu · slide 16:9 | [ass5/README.md](ass5/README.md) · [bản PDF](ass5/ass5-Consistency-Models.pdf) |
-| [`ass6/`](ass6) | Leaderboard trên Redis Sorted Set — REST API `ZADD` / `ZREVRANGE`, hai container Redis master–replica | Spring Boot thường | Spring Boot 3.4 · Spring MVC · Spring Data Redis · Docker Compose | [ass6/README.md](ass6/README.md) |
+| [`ass6/`](ass6) | Leaderboard trên Redis Sorted Set (`ZADD` / `ZREVRANGE`, hai container master–replica) · `DELETE /products/{id}` qua cache hai tầng L1/L2 + Redis Pub/Sub | Spring Boot thường | Spring Boot 3.4 · Spring MVC · Spring Data Redis · Spring Cache · JPA · H2 · Docker Compose | [ass6/README.md](ass6/README.md) |
+| [`ass7/`](ass7) | Phân tích hiệu năng JVM cho endpoint `/process`: vấn đề, bằng chứng, nguyên nhân gốc rễ, cách sửa + cờ JVM — **chỉ có tài liệu, không có mã nguồn** | — | Tài liệu · GC log · JFR | [ass7/markdown.md](ass7/markdown.md) |
 
 Mỗi thư mục tự chứa mã nguồn, bộ test và tài liệu riêng. README của từng bài ghi rõ phạm vi
 của nó, và phần nào là giả định của người làm bài chứ không lấy từ đề.
@@ -18,7 +19,7 @@ của nó, và phần nào là giả định của người làm bài chứ khô
 Chỉ cần **JDK 21**. Mọi bài dùng Maven Wrapper nên không phải cài Maven — `mvnw` tự tải về
 lần đầu chạy. `ass1` chạy ở cổng 8080, `ass2` ở 8081, `ass3` ở 8082, `ass6` ở 8083 nên bật song song được.
 Riêng `ass6` cần **Docker** — hai container Redis là hạ tầng của bài, chạy bằng `docker compose up -d`.
-`ass4` và `ass5` là bài thiết kế thuần — chỉ có tài liệu, không có gì để chạy.
+`ass4`, `ass5` và `ass7` chỉ có tài liệu, không có gì để chạy.
 
 ## Chạy nhanh
 
@@ -46,11 +47,12 @@ curl -X POST "http://localhost:8082/api/demo/cap?strategy=cp"   # doi sang ap de
 ```bash
 cd ass6
 docker compose up -d     # BAT BUOC: redis-master :6379, redis-replica :6380
-.\mvnw test              # 13 test, danh vao Redis that
+.\mvnw test              # 22 test, danh vao Redis that
 .\mvnw spring-boot:run   # REST API cong 8083
 
 curl -X POST http://localhost:8083/leaderboard/an -H 'Content-Type: application/json' -d '{"score": 1500}'
 curl http://localhost:8083/leaderboard/top/3
+curl -X DELETE http://localhost:8083/products/2
 ```
 
 ## Quy ước chung

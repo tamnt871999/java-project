@@ -293,7 +293,8 @@ Kiến thức đã kiểm chứng, kèm link nguồn, nằm ở:
 | CAP, quorum, PostgreSQL + Patroni, `pg_rewind` | `ass3/README.md` |
 | PACELC, knob replication, thundering herd, idempotency | `ass4/README.md` |
 | Consistency model, session guarantees, bộ đếm không idempotent | `ass5/README.md` |
-| Redis Sorted Set, `ZADD` / `ZREVRANGE`, replication master–replica | `ass6/README.md` |
+| Redis Sorted Set, `ZADD` / `ZREVRANGE`, replication master–replica, `@CacheEvict`, cache L1/L2, Redis Pub/Sub | `ass6/README.md` |
+| High GC Churn, G1 humongous object, GC log, JFR, cờ JVM `-Xms`/`-Xmx`/`G1HeapRegionSize` | `ass7/markdown.md` |
 
 ---
 
