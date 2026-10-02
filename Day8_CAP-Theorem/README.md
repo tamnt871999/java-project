@@ -1,4 +1,4 @@
-# ass3 — Thiết kế distributed system & quyết định CAP
+# Day8_CAP-Theorem — Thiết kế distributed system & quyết định CAP
 
 > **Loại bài:** B (thiết kế) + bonus code. Theo `CLAUDE.md`, tài liệu này là bài nộp chính;
 > phần API bên dưới chỉ để minh hoạ quyết định thiết kế.

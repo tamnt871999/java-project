@@ -1,4 +1,4 @@
-# ass2 — Ví điện tử: anemic → rich domain model
+# Day3_Domain-Driven-Design — Ví điện tử: anemic → rich domain model
 
 Chuyển `WalletEntity` — một túi dữ liệu với mọi thuộc tính `public` — thành **Aggregate Root
 tự bảo vệ invariant của chính nó**, đặt trong khung Clean Architecture và bọc bằng REST API.
@@ -79,7 +79,7 @@ case sau này, ví cũng không thể âm.
 
 ## 3. API
 
-Cổng `8081` (để chạy song song với `ass1` ở `8080`).
+Cổng `8081` (để chạy song song với `Day1_Clean-Architect` ở `8080`).
 
 | Method | Đường dẫn | Tác dụng |
 |---|---|---|

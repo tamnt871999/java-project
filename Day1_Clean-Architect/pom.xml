@@ -13,11 +13,11 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>ass1</artifactId>
+    <artifactId>day1-clean-architect</artifactId>
     <version>2.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ass1 - Place Order (Spring Boot MVC + Clean Architecture)</name>
+    <name>Day1_Clean-Architect - Place Order (Spring Boot MVC + Clean Architecture)</name>
     <description>REST API dat hang: Spring MVC + Spring Data JPA o vong ngoai, domain va use case thuan Java o vong trong</description>
 
     <properties>

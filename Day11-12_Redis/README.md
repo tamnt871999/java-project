@@ -1,4 +1,4 @@
-# ass6 — Redis trong Spring Boot: Leaderboard và xoá sản phẩm qua cache hai tầng
+# Day11-12_Redis — Redis trong Spring Boot: Leaderboard và xoá sản phẩm qua cache hai tầng
 
 **Phần 1**
 
@@ -36,7 +36,7 @@ không phải đổi code phần 1.
 Hai container Redis phải chạy trước — chúng là hạ tầng của bài, không phải thứ tuỳ chọn.
 
 ```bash
-cd ass6
+cd Day11-12_Redis
 docker compose up -d        # redis-master :6379, redis-replica :6380
 .\mvnw test                 # 22 test
 .\mvnw spring-boot:run      # cong 8083
@@ -83,9 +83,9 @@ là thứ tự phần tử trong mảng.
 Chạy thật để đối chiếu:
 
 ```
-$ docker exec ass6-redis-master redis-cli ZREVRANGE leaderboard:global 0 2 WITHSCORES
+$ docker exec day11-12-redis-master redis-cli ZREVRANGE leaderboard:global 0 2 WITHSCORES
 dung 3100 binh 2700 em 2050
-$ docker exec ass6-redis-master redis-cli TYPE leaderboard:global
+$ docker exec day11-12-redis-master redis-cli TYPE leaderboard:global
 zset
 ```
 
@@ -122,17 +122,17 @@ command: ["redis-server", "--replicaof", "redis-master", "6379"]
 Trạng thái thật sau khi `docker compose up -d`:
 
 ```
-$ docker exec ass6-redis-master redis-cli INFO replication
+$ docker exec day11-12-redis-master redis-cli INFO replication
 role:master
 connected_slaves:1
 slave0:ip=172.19.0.3,port=6379,state=online,offset=0,lag=1
 
-$ docker exec ass6-redis-replica redis-cli INFO replication
+$ docker exec day11-12-redis-replica redis-cli INFO replication
 role:slave
 master_host:redis-master
 master_link_status:up
 
-$ docker exec ass6-redis-replica redis-cli ZADD test 1 a
+$ docker exec day11-12-redis-replica redis-cli ZADD test 1 a
 READONLY You can't write against a read only replica.
 ```
 
@@ -244,11 +244,11 @@ instance phải dùng chung một DB — H2 in-memory thì mỗi JVM một bản
 có `AUTO_SERVER=TRUE`:
 
 ```bash
-cd ass6
+cd Day11-12_Redis
 docker compose up -d
 .\mvnw package -DskipTests
-java -jar target/ass6-1.0.0.jar --server.port=8083 "--spring.datasource.url=jdbc:h2:file:./target/products-db;AUTO_SERVER=TRUE"
-java -jar target/ass6-1.0.0.jar --server.port=8084 "--spring.datasource.url=jdbc:h2:file:./target/products-db;AUTO_SERVER=TRUE"
+java -jar target/day11-12-redis-1.0.0.jar --server.port=8083 "--spring.datasource.url=jdbc:h2:file:./target/products-db;AUTO_SERVER=TRUE"
+java -jar target/day11-12-redis-1.0.0.jar --server.port=8084 "--spring.datasource.url=jdbc:h2:file:./target/products-db;AUTO_SERVER=TRUE"
 ```
 
 Kết quả chạy thật, kèm một `redis-cli SUBSCRIBE product-deletion` nghe độc lập:

@@ -13,12 +13,12 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>ass6</artifactId>
-    <version>1.0.0</version>
+    <artifactId>day3-domain-driven-design</artifactId>
+    <version>2.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ass6 - Leaderboard tren Redis Sorted Set</name>
-    <description>REST API ghi diem bang ZADD va lay top N bang ZREVRANGE, doc tu Redis replica</description>
+    <name>Day3_Domain-Driven-Design - Vi dien tu (Rich Domain Model + Clean Architecture)</name>
+    <description>Tai cau truc vi dien tu tu anemic sang rich domain model</description>
 
     <properties>
         <java.version>21</java.version>
@@ -34,22 +34,12 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
         <dependency>

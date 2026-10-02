@@ -1,4 +1,4 @@
-# ass1 — Demo Clean Architecture với Spring Boot
+# Day1_Clean-Architect — Demo Clean Architecture với Spring Boot
 
 Bản demo tối giản để hiểu **Clean Architecture**: 14 file source, 2 file test.
 API đặt hàng với 2 endpoint, không có gì thừa.

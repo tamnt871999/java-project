@@ -13,11 +13,11 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>ass3</artifactId>
+    <artifactId>day8-cap-theorem</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>ass3 - CAP strategy (Inventory Reservation)</name>
+    <name>Day8_CAP-Theorem - CAP strategy (Inventory Reservation)</name>
     <description>Bonus API minh hoa danh doi CP va AP: hai adapter sau cung mot port, doi bang mot dong cau hinh</description>
 
     <properties>

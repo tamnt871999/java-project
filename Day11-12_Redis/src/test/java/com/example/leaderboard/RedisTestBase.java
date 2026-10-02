@@ -13,7 +13,7 @@ public abstract class RedisTestBase {
 
     private static final String HUONG_DAN =
             "Khong ket noi duoc hai Redis o localhost:6379 va localhost:6380. "
-                    + "Chay 'docker compose up -d' trong thu muc ass6 truoc khi chay test.";
+                    + "Chay 'docker compose up -d' trong thu muc Day11-12_Redis truoc khi chay test.";
 
     @Autowired
     @Qualifier(RedisConfig.MASTER)
