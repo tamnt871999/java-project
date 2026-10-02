@@ -1,174 +1,110 @@
 # CLAUDE.md — quy ước repo `java-project`
 
 Bài tập môn kiến trúc phần mềm, mục tiêu **junior → middle**. Trọng tâm là hiểu design pattern
-và kiến trúc, không phải xây hệ thống production.
+và kiến trúc, không phải xây hệ thống production. Chỉ Backend.
 
-- **Chỉ Backend.** Repo không biết gì về Frontend — giả định đã nhận được API phù hợp.
-- **Giữ đơn giản.** Không tự thêm security, cache, queue, phân trang, hay tầng kiến trúc nếu
-  đề không yêu cầu.
 - **Không tự ý `git commit` / `push`.** Mặc định ở nhánh `main`; được yêu cầu commit thì tạo
   branch trước.
+- **Mỗi bài một thư mục `Day<N>_<Chủ-đề>`** (vd. `Day11-12_Redis`), độc lập hoàn toàn: package
+  gốc riêng `com.example.<domain>`, `artifactId` viết thường (`day11-12-redis`), không import chéo.
+  Thêm bài mới thì cập nhật bảng trong `README.md` ở root.
 
 ---
 
-## 1. Luật phạm vi — đọc trước mọi thứ khác
+## 1. Luật phạm vi — thắng mọi mục khác
 
-**Đề bài là nguồn DUY NHẤT quyết định bài nộp gồm những gì. Luật này thắng mọi mục khác trong
-file này. Không có ngoại lệ, không có trường hợp đặc biệt.**
+**Đề bài là nguồn DUY NHẤT quyết định bài nộp gồm những gì.**
 
-### Bước bắt buộc trước khi viết dòng đầu tiên
-
-Chép từng gạch đầu dòng của đề ra thành **danh sách kiểm**. Mỗi thứ sắp tạo ra — mỗi endpoint,
-mỗi trường JSON, mỗi mục tài liệu, mỗi file cấu hình — phải chỉ ra được nó phục vụ gạch đầu dòng
-nào. **Chỉ không ra thì không làm.**
-
-### Phân biệt HÌNH THỨC với NỘI DUNG
-
-Đây là chỗ sai đi sai lại nhiều nhất, và là lý do thật sự của mọi lần out scope.
+Trước khi viết: chép từng gạch đầu dòng của đề thành danh sách kiểm. Mỗi thứ sắp tạo — file,
+endpoint, trường JSON, mã lỗi, mục tài liệu — phải chỉ ra được nó phục vụ gạch đầu dòng nào.
+**Không chỉ ra được thì không làm.**
 
 | | Là gì | Ai quyết định |
 |---|---|---|
-| **Hình thức** | *Viết thế nào*: đặt tên, chia package, constructor injection, `@RestControllerAdvice`, cách viết test, cách trình bày README, template slide | Các mục Phần A / Phần B bên dưới |
-| **Nội dung** | *Bài có những gì*: endpoint nào, trường nào trong response, mã lỗi nào, mục nào trong tài liệu, chủ đề nào, hạ tầng nào | **Chỉ đề bài** |
+| **Hình thức** | *Viết thế nào*: đặt tên, chia package, cách viết test, cách trình bày | File này |
+| **Nội dung** | *Bài có những gì*: code hay không, endpoint, trường, mã lỗi, mục tài liệu, hạ tầng | **Chỉ đề bài** |
 
-> **Mọi danh sách trong Phần A và Phần B là quy ước hình thức, KHÔNG phải danh mục phải có.**
-> Phần B liệt kê "Architecture diagram" không có nghĩa mọi bài thiết kế đều phải có diagram — chỉ
-> bài nào **đề đòi** diagram mới có. Phần A nói cách dịch lỗi không có nghĩa phải phủ hết mọi mã
-> lỗi trong bảng — chỉ những mã mà endpoint trong đề thật sự sinh ra.
+Mọi danh sách trong file này là quy ước **hình thức**, không phải danh mục phải có.
 
-### Out scope trông như thế nào
+Những lần out scope đã phải gỡ:
 
-Bốn dòng dưới đây đều là việc **đã thật sự làm rồi phải gỡ đi**, không phải ví dụ giả định:
-
-| Đã tự thêm | Đề có đòi không |
+| Đã tự thêm | Đề đòi gì |
 |---|---|
-| PACELC trong `ass3` | Không — đề chỉ hỏi CAP |
-| Lớp "van Redis" trong `ass4` | Không — tự nghĩ ra, còn trái luật "không tự thêm cache" |
-| Cây quyết định, giả định, bảng tổng hợp, sơ đồ, "khi nào sai" trong `ass5` | Không — đề chỉ hỏi 3 câu cho mỗi tính năng |
-| Trường `rank`, mã lỗi `503` trong `ass6` | Không — đề chỉ hỏi 2 endpoint |
+| PACELC trong `Day8_CAP-Theorem` | Chỉ CAP |
+| Lớp "van Redis" trong `Day9_PACELC-Theorem` | Không nhắc tới cache |
+| Cây quyết định, giả định, bảng tổng hợp, sơ đồ trong `Day10_Consistency-Models` | 3 câu cho mỗi tính năng |
+| Trường `rank`, mã lỗi `503` trong `Day11-12_Redis` | 2 endpoint |
+| Cả ứng dụng Spring Boot + test trong `Day13_JVM-Performance` | Chỉ một file `markdown.md` |
+| Mục giả định, lệnh tái hiện, nguồn trong `Day13_JVM-Performance/markdown.md` | Chỉ trả lời 4 câu hỏi |
 
-**Không phải chỉ chủ đề lớn mới là out scope.** Một trường thừa trong response, một endpoint
-thừa, một mã lỗi thừa, một mục thừa trong README — đều là out scope y như nhau.
+Một trường thừa, một mục thừa cũng là out scope. *"Nó liên quan và mình biết rõ"* không phải lý do.
 
-Hai lý lẽ hay dùng để tự cho phép, cả hai đều sai:
-- *"Nó liên quan chặt và mình biết rõ."* → Không liên quan. Đề không hỏi.
-- *"`CLAUDE.md` có liệt kê mục này."* → Đó là hình thức. Xem bảng trên.
-
-### Thấy thứ hay nhưng ngoài đề
-
-**Không làm trước rồi báo sau.** Nói **một dòng** ở cuối câu trả lời rồi **dừng, chờ người dùng
-quyết**. Tự làm rồi xin phép sau vẫn là vi phạm, dù có ghi chú rõ ràng đến đâu — vì người dùng
-phải đi dọn thứ họ không yêu cầu.
-
-### Không tràn sang bài khác
-
-Đang làm bài này thì **không sửa bài khác**; thấy bài cũ có vấn đề thì **báo** để người dùng
-quyết. Copy `pom.xml` / `mvnw` thì được, **import chéo package thì không**.
-
-> **Tự kiểm bắt buộc trước khi báo xong:** mở lại đề, đối chiếu **từng gạch đầu dòng** với **từng
-> thứ đã tạo ra** — từng endpoint, từng trường JSON, từng mục README, từng file. Thứ nào không
-> map được vào một yêu cầu nào → gỡ ra trước khi trả lời.
+- **Thấy thứ hay nhưng ngoài đề:** không làm. Nói **một dòng** cuối câu trả lời rồi chờ người
+  dùng quyết. Làm trước rồi báo sau vẫn là vi phạm.
+- **Không sửa bài khác** khi đang làm một bài; thấy vấn đề thì báo.
+- **Tự kiểm trước khi báo xong:** đối chiếu từng thứ đã tạo với từng gạch đầu dòng của đề; thứ
+  nào không map được thì gỡ.
 
 ---
 
-## 2. Phân loại đề
+## 2. Phân loại đề — quyết định có code hay không
 
-| Loại | Dấu hiệu trong đề | Bài nộp chính |
+| Loại | Dấu hiệu | Bài nộp |
 |---|---|---|
-| **A — Code** | "triển khai", "implement", "viết API", "tái cấu trúc" | Mã nguồn chạy được + test |
-| **B — Thiết kế** | "thiết kế", "chọn", "so sánh", "justify", "diagram" | `README.md` của bài |
+| **Code** | "triển khai", "implement", "viết API", "tái cấu trúc" | Mã nguồn chạy được + test + `README.md` |
+| **Tài liệu** | "thiết kế", "chọn", "so sánh", "phân tích", đề chỉ định file nộp | **Chỉ** file tài liệu, **không có code** |
+| **Lai** | Tài liệu kèm *"Bonus: implement small API"* | Tài liệu trước, code tối giản sau |
 
-**Bài lai** (B kèm *"Bonus: implement small API"*): tài liệu là bài nộp chính → **làm tài liệu
-trước, code sau**, code tối giản.
-
-Không chắc thuộc loại nào → **hỏi**, đừng đoán.
-
----
-
-## 3. Quy ước chung
-
-- **Không comment trong mã nguồn.** Thật sự cần thì tiếng Việt **không dấu**. File `.md` viết
-  đủ dấu.
-- Tên class / method / biến: tiếng Anh chuẩn Java. `@DisplayName` và tên method test: tiếng
-  Việt không dấu, mô tả hành vi.
-- Mỗi bài có `README.md` riêng, ghi rõ **phần nào là giả định của người làm bài**.
-- Thêm bài mới thì cập nhật bảng trong `README.md` ở root.
+- Đề chỉ định tên file (vd. `markdown.md`) thì dùng đúng tên đó; không thì `README.md`.
+- Tài liệu nộp = **đề bài chép nguyên văn + trả lời đúng từng câu hỏi**. Không thêm mục giả
+  định, nguồn, cách tái hiện… trừ khi đề đòi.
+- Cần chạy thử để lấy số đo / bằng chứng thì chạy trong scratchpad, **không** đưa code vào repo.
+- Không chắc thuộc loại nào → **hỏi**.
 
 ---
 
-## 4. Không được bịa
+## 3. Không được bịa
 
 | Loại thông tin | Xử lý |
 |---|---|
-| Khái niệm nền tảng ổn định (định nghĩa CAP, Redis là in-memory store) | Được khẳng định |
-| **Giá trị mặc định của config**, **tên tham số / API**, **hành vi theo phiên bản** | **PHẢI kiểm chứng** |
-| **Con số hiệu năng / benchmark / giới hạn** | **KHÔNG đưa ra** nếu không có nguồn |
+| Khái niệm nền tảng ổn định | Được khẳng định |
+| Giá trị mặc định của config, tên tham số / API, hành vi theo phiên bản | **Phải kiểm chứng** |
+| Con số hiệu năng / benchmark | **Không đưa ra** nếu không tự đo hoặc không có nguồn |
 
-Kiểm chứng theo thứ tự ưu tiên: **chạy thử** → **tài liệu chính thức** (`WebFetch` /
-`WebSearch`, ghi link vào README của bài) → **hỏi người dùng**.
+Thứ tự kiểm chứng: **chạy thử** → **tài liệu chính thức** → **hỏi người dùng**. Không làm được
+thì nói thẳng là không chắc.
 
-Không làm được cả ba thì **nói thẳng là không chắc**, đánh dấu *"giả định, chưa kiểm chứng"*
-trong tài liệu, rồi đi tiếp.
+Dùng đúng thuật ngữ của từng hệ thống (vd. Redis là **master / replica**, không phải primary).
 
 ---
 
-# PHẦN A — bài code
+## 4. Bài code
 
-## Lệnh
-
-JDK 21. Luôn `cd` vào thư mục bài trước.
+JDK 21, Maven Wrapper, Spring Boot 3.4 MVC + annotation. Không Gradle, không Lombok.
 
 ```bash
 .\mvnw test                 # PHAI xanh truoc khi bao xong
 .\mvnw spring-boot:run
 ```
 
-Spring Boot MVC + annotation. Đừng thêm Gradle, đừng thêm Lombok, đừng đổi build tool.
+**Cấu trúc:** mặc định Spring Boot thường (`controller/ service/ repository/ entity/ exception/`).
+Chỉ dùng Clean Architecture khi đề nói "Clean Architecture", "hexagonal", "tách tầng", "tái cấu
+trúc anemic". Thêm tầng mà đề không đòi là làm sai đề.
 
-## Chọn cấu trúc — KHÔNG mặc định Clean Architecture
+**Quy ước:**
 
-| Đề nói gì | Dùng gì |
-|---|---|
-| Không nhắc tới kiến trúc | **Spring Boot thường** |
-| "Clean Architecture", "hexagonal", "ports & adapters", "tách tầng", "tái cấu trúc anemic" | [Phụ lục A1](#phụ-lục-a1--khi-đề-đòi-clean-architecture) |
-| Design pattern (Strategy, Factory, Observer…) | Spring Boot thường + đúng pattern đề hỏi |
-| Transaction, validation, test, hiệu năng, bảo mật | Spring Boot thường |
+- Không comment trong mã nguồn; thật sự cần thì tiếng Việt **không dấu**. File `.md` viết đủ dấu.
+- Tên class / method / biến tiếng Anh. Tên method test và `@DisplayName` tiếng Việt không dấu.
+- Constructor injection, field `final`. DTO là `record` lồng trong class sở hữu nó.
+- Repository trả `Optional`. Khoá chính do database cấp (`@GeneratedValue`).
+- Ghi tên tường minh: `@PathVariable("id")`, `@RequestParam("q")` — thiếu thì lỗi chỉ nổ lúc chạy.
+- Tiền dùng `BigDecimal`, không `double`. Không trả thẳng `@Entity` ra API. Nghiệp vụ ở `service/`.
+- `@Transactional`, `@Cacheable`, `@CacheEvict` chỉ có tác dụng qua proxy Spring: gọi từ method
+  cùng class hoặc qua `new` thì annotation im lặng không chạy.
+- Database mặc định H2 in-memory.
 
-```
-com.example.<domain>/
-    controller/  service/  repository/  entity/  exception/
-```
-
-> **Thêm tầng mà đề không đòi là làm sai đề, không phải làm kỹ.**
-
-## Cấm
-
-| # | Cấm | Vì sao |
-|---|---|---|
-| 1 | `double` / `float` cho tiền | `0.1 + 0.2 = 0.30000000000000004`. Dùng `BigDecimal` |
-| 2 | Trả thẳng `@Entity` ra API | Đổi cột là đổi response; lazy loading nổ lúc serialize |
-| 3 | Nghiệp vụ nằm trong controller | Luật ở `service/` |
-| 4 | Chép một luật nghiệp vụ ra hai chỗ | Ngày đổi sẽ quên một chỗ |
-| 5 | `ddl-auto: create-drop` ngoài dev | Xoá sạch database mỗi lần khởi động |
-| 6 | Xoá file vì grep không thấy ai gọi | `@RestControllerAdvice`, `@Entity`, repo Spring Data, `*Test` đều do **framework** gọi |
-
-## Nên làm
-
-- Constructor injection với field `final`. Không `@Autowired` trên field.
-- Repository trả `Optional`, không trả `null`.
-- DTO dùng `record`, lồng vào class sở hữu nó.
-- Database cấp khoá chính (`@GeneratedValue`), ứng dụng không tự đặt ID.
-- **Ghi tên tường minh: `@PathVariable("id")`, `@RequestParam("q")`, `@RequestHeader("X-Node")`.**
-  Bỏ tên thì Spring phải đoán qua cờ compiler `-parameters`; cờ đó có thể vắng mặt và lỗi chỉ
-  nổ **lúc chạy** (`Name for argument … not specified`), không phải lúc biên dịch.
-- **`@Transactional` chỉ có tác dụng qua proxy Spring.** Gọi object bằng `new`, hoặc gọi method
-  `@Transactional` từ method khác **cùng class** → transaction im lặng không tồn tại.
-
-## Dịch lỗi
-
-Đặt trong `@RestControllerAdvice` — **nơi duy nhất** biết con số HTTP.
-Body lỗi luôn là `{ "code": ..., "message": ... }`.
-**Chỉ map những lỗi mà endpoint trong đề thật sự sinh ra**, không phủ cho đủ bảng.
+**Dịch lỗi** trong `@RestControllerAdvice`, body `{ "code": ..., "message": ... }`. Chỉ map lỗi
+mà endpoint trong đề thật sự sinh ra:
 
 | Exception | HTTP | `code` |
 |---|---|---|
@@ -176,143 +112,49 @@ Body lỗi luôn là `{ "code": ..., "message": ... }`.
 | Exception nghiệp vụ tự định nghĩa | `422` | `BUSINESS_RULE_VIOLATED` |
 | `*NotFoundException` | `404` | `<X>_NOT_FOUND` |
 
-`400` = *"tôi không hiểu bạn nói gì"* (sai cú pháp, do `@NotNull` / `@NotBlank` bắt).
-`422` = *"tôi hiểu, nhưng không làm được"* (cú pháp đúng, nghiệp vụ từ chối).
+**Test:** luôn có end-to-end `@SpringBootTest` + `MockMvc`, gồm các nhánh lỗi mà endpoint sinh ra.
 
-## Test
-
-**Luôn phải có:** end-to-end `@SpringBootTest` + `MockMvc`, gồm cả nhánh `400` / `404` / `422`.
-Thêm khi bài đáng: test tầng nghiệp vụ chạy bằng `new`, `@DataJpaTest` cho repository.
-
-**Fitness function chỉ bắt buộc với bài Clean Architecture.**
-
-## Database
-
-Mặc định **H2 in-memory**, trừ khi đề yêu cầu khác.
-
----
-
-## Phụ lục A1 — khi đề đòi Clean Architecture
-
-**Chỉ đọc mục này khi đề thật sự đòi.** Luật dưới đây **thêm vào** luật chung ở trên.
+### Khi đề đòi Clean Architecture
 
 ```
-adapter/       in/web, out/persistence, config — nơi DUY NHẤT biết Spring
+adapter/       in/web, out/persistence, config — noi DUY NHAT biet Spring
 application/   port/in, port/out, usecase
-domain/        nghiệp vụ thuần
+domain/        nghiep vu thuan
 ```
 
-**Dependency Rule:** `import` luôn chỉ vào trong. Hai chỗ cắt bắt buộc — `<X>UseCase` (cổng
-vào) và `<X>Repository` (cổng ra): **tầng trong định nghĩa interface, tầng ngoài implements**.
-
-| # | Cấm thêm |
-|---|---|
-| CA-1 | `domain/` import `org.springframework`, `jakarta.*`, `javax.*`, `com.fasterxml`, `java.sql` |
-| CA-2 | `application/` import `adapter/` |
-| CA-3 | `@Entity` trên aggregate của `domain/` — tách `<X>JpaEntity` ở `adapter/out/persistence` |
-| CA-4 | `adapter/in/**` import `adapter/out/**` |
-| CA-5 | Use case trả `ResponseEntity` hoặc biết `404` / `400` |
-| CA-6 | Controller gọi thẳng `JpaRepository` |
-
-Annotation: `domain/` **cấm tuyệt đối**; `application/` được `@Service` / `@Transactional`;
-`adapter/` thoải mái.
-
-**Nên làm thêm:** port ra do `application` **sở hữu**, chữ ký hàm chỉ nói ngôn ngữ domain
-(không `Entity`, không SQL, không `Jpa`) · luật nghiệp vụ nằm trong constructor / factory
-method của domain · **không setter công khai** trên object domain.
-
-**Fitness function bắt buộc** — biến CA-1, CA-2, CA-4 và "domain không dính hạ tầng" thành
-test đọc thẳng mã nguồn. Test của `domain/` mà cần Spring context → kiến trúc sai.
+- `import` chỉ hướng vào trong. Tầng trong định nghĩa interface (`<X>UseCase`, `<X>Repository`),
+  tầng ngoài implements.
+- `domain/` không import `org.springframework`, `jakarta.*`, `javax.*`, `com.fasterxml`,
+  `java.sql`; không `@Entity` (tách `<X>JpaEntity` ở `adapter/out/persistence`); không setter
+  công khai.
+- `application/` không import `adapter/`; `adapter/in` không import `adapter/out`. Use case không
+  biết HTTP.
+- **Bắt buộc fitness function**: test đọc thẳng mã nguồn, fail build khi vi phạm các luật trên.
 
 ---
 
-# PHẦN B — bài thiết kế
+## 5. Bài tài liệu
 
-`assN/README.md` **chính là bài nộp**. Dưới đây là **khuôn trình bày**, không phải danh
-mục phải có — chỉ làm mục nào đề đòi (xem [Luật phạm vi](#1-luật-phạm-vi--đọc-trước-mọi-thứ-khác)):
-
-1. **Đề bài** — chép nguyên văn, để người chấm đối chiếu.
-2. **Giả định** — quy mô, tỉ lệ đọc/ghi, độ trễ, mức chấp nhận mất dữ liệu. Không có giả định
-   thì mọi lựa chọn đều vô căn cứ.
-3. **Các phương án đã cân nhắc** — ít nhất 3, kèm bảng so sánh.
-4. **Quyết định + justify.**
-5. **Architecture diagram.**
-6. **Đánh đổi đã chấp nhận** — chọn phương án này thì mất gì.
-7. **Khi nào quyết định này sai** — điều kiện nào đổi thì phải chọn lại.
-
-Mục 6–7 là thứ phân biệt bài middle với bài junior. Junior viết *"tôi chọn X vì X tốt"*.
-Middle viết *"tôi chọn X, chấp nhận mất Y, và nếu Z đổi thì phải xem lại"*.
-
-**Justify chỉ hợp lệ khi đủ ba phần:** gắn với yêu cầu nghiệp vụ cụ thể (không phải *"X phổ
-biến và dễ scale"*) · nêu phương án bị loại **và lý do loại** · nêu cái giá phải trả.
-
-**Diagram:** Mermaid nhúng thẳng trong `README.md` — GitHub render được, diff được như code.
-Phải thể hiện: các node, hướng replication, client đi vào đâu, chỗ nào sự cố có thể xảy ra.
-Viết xong nên **render thử** để chắc nó không vỡ.
-
-## Khi đề đòi nộp file (PDF / slide)
-
-**Dùng đúng template của `ass4` / `ass5`: deck 16:9, mỗi heading `#` trong `README.md` là một
-slide.** Không dựng khuôn mới cho từng bài.
-
-- `README.md` viết luôn theo dạng slide: bìa là `# <tiêu đề>` + khối đề bài nguyên văn, sau đó
-  mỗi `# ` là **một slide nói một ý**. `##` trở xuống nằm trong slide.
-- Chuỗi công cụ: markdown → HTML (`marked` + `mermaid` từ CDN) → `chrome --headless
-  --print-to-pdf --no-pdf-header-footer`. Khổ trang **960 × 540 pt**. Số trang do template chèn.
-- **Số slide do đề quyết định, không có con số chuẩn.** Trả lời hết các tình huống đề hỏi,
-  không thêm slide nào cho thứ đề không hỏi, cũng không gộp ép để cho đủ một con số đẹp.
-- **Đo rồi mới chia slide, đừng đoán.** Script báo tỉ lệ *cao nội dung / cao slide* của từng
-  slide và **tự co giãn** cho vừa khung (thu nhỏ tới 0.55×, phóng to tới 1.30×). Chỉ phải tự tay
-  tách slide khi tỉ lệ vượt **~1.6** — lúc đó thu nhỏ sẽ hết đọc được.
-- **Render ra ảnh rồi nhìn tận mắt trước khi báo xong.** Đúng số trang không chứng minh được
-  trang không vỡ. *Đã mắc: bìa bị tách hai trang, trang trắng ở cuối, ảnh tràn khỏi khung.*
-
-**Nếu có "Bonus: implement small API":** làm **sau** khi tài liệu xong, theo Phần A, **tối
-giản nhất có thể**. Với bài dạy một khái niệm, cân nhắc một endpoint chạy trọn kịch bản rồi
-**tường thuật từng bước** — dễ hiểu hơn nhiều so với bắt người đọc tự gõ 7 lệnh `curl`.
+- Bài thiết kế (chọn phương án): justify phải gắn với yêu cầu cụ thể của đề, nêu phương án bị loại
+  và lý do, nêu cái giá phải trả. Diagram (nếu đề đòi) viết bằng Mermaid nhúng trong file `.md`.
+- **Đề đòi PDF / slide:** dùng đúng template của `Day9_PACELC-Theorem` / `Day10_Consistency-Models`.
+  - Deck 16:9, khổ 960 × 540 pt, mỗi heading `#` là một slide. Bìa là `# <tiêu đề>` + đề bài.
+  - Chuỗi công cụ: markdown → HTML (`marked` + `mermaid` từ CDN) → `chrome --headless
+    --print-to-pdf --no-pdf-header-footer`.
+  - Số slide do đề quyết định. Script tự co giãn nội dung cho vừa slide; tỉ lệ cao nội dung /
+    cao slide vượt ~1.6 thì tách slide.
+  - **Render ra ảnh và nhìn tận mắt trước khi báo xong** (đã gặp: bìa tách hai trang, trang trắng
+    cuối, ảnh tràn khung).
 
 ---
 
-## Bẫy đã mắc
+## 6. Quy trình và bẫy đã mắc
 
-Mục này **chỉ ghi bẫy về cách làm việc**, không chứa kiến thức chủ đề — kiến thức nằm ở
-`README.md` của từng bài (xem [Luật phạm vi](#1-luật-phạm-vi--đọc-trước-mọi-thứ-khác)).
+1. Chạy test trước khi báo xong; thay đổi lớn thì chạy thật app rồi `curl`, gồm cả nhánh lỗi.
+2. Báo cáo trung thực: test đỏ thì nói kèm output; bỏ bước nào thì nói.
+3. Giải thích cả *tại sao*; có hai cách thì nói rõ đánh đổi.
 
-- **Mặc định của một tham số ≠ tính năng đã bật.** `synchronous_commit` của PostgreSQL mặc
-  định là `on`, nhưng khi `synchronous_standby_names` rỗng thì nó chỉ flush WAL **cục bộ**.
-  Trước khi viết "mặc định đã là X", kiểm tra tham số nào thật sự kích hoạt hành vi đó.
-- **Xoá code thì xoá cả tài liệu trỏ tới nó.**
-- **Heredoc nhiều khối trong một lệnh bash hay vỡ.** Nội dung dài thì ghi bằng công cụ ghi file.
-- **Sửa file hàng loạt bằng script thì cẩn thận string literal và text block.** Regex ngây thơ
-  cắt nhầm `"http://..."` thành comment.
-
-Kiến thức đã kiểm chứng, kèm link nguồn, nằm ở:
-
-| Chủ đề | Bài |
-|---|---|
-| CAP, quorum, PostgreSQL + Patroni, `pg_rewind` | `ass3/README.md` |
-| PACELC, knob replication, thundering herd, idempotency | `ass4/README.md` |
-| Consistency model, session guarantees, bộ đếm không idempotent | `ass5/README.md` |
-| Redis Sorted Set, `ZADD` / `ZREVRANGE`, replication master–replica, `@CacheEvict`, cache L1/L2, Redis Pub/Sub | `ass6/README.md` |
-| High GC Churn, G1 humongous object, GC log, JFR, cờ JVM `-Xms`/`-Xmx`/`G1HeapRegionSize` | `ass7/markdown.md` |
-
----
-
-## Quy trình
-
-1. **Chạy test trước khi báo xong.** Không suy đoán kết quả.
-2. **Thay đổi lớn thì chạy thật app rồi `curl`**, gồm cả nhánh lỗi.
-3. **Refactor lớn chia bước, compile sau mỗi bước** — để compiler bắt thay vì đọc mắt.
-4. **Báo cáo trung thực** — test đỏ thì nói kèm output; bỏ bước nào thì nói.
-5. **Giải thích cả *tại sao*.** Có hai cách thì nói rõ đánh đổi.
-
-## Khi tạo bài mới
-
-1. **Phân loại đề** (A hay B).
-2. **Liệt kê đúng những gì đề đòi, không hơn** — xem
-   [Luật phạm vi](#1-luật-phạm-vi--đọc-trước-mọi-thứ-khác).
-3. Chủ đề chưa từng kiểm chứng → áp mục *Không được bịa* trước khi viết dòng nào.
-4. Thư mục riêng `assN/`, package gốc riêng `com.example.<domain>`.
-5. Bài code: copy `pom.xml`, `mvnw` / `.mvn/` từ bài gần nhất. **Chọn cấu trúc trước khi tạo
-   package nào** — mặc định Spring Boot thường. **Bắt đầu tối giản.**
-6. `README.md` riêng cho bài + cập nhật bảng trong `README.md` ở root.
+- **Mặc định của một tham số ≠ tính năng đã bật.** Kiểm tham số nào thật sự kích hoạt hành vi.
+- **Xoá hay đổi tên thứ gì thì sửa luôn mọi tài liệu trỏ tới nó.**
+- **Kiểm thời điểm của surefire report** — lệnh `mvnw` chưa chạy thì report cũ vẫn nằm đó.
+- **Nội dung dài thì ghi bằng công cụ ghi file**, không dùng heredoc nhiều khối.
