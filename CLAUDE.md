@@ -3,8 +3,8 @@
 Bài tập môn kiến trúc phần mềm, mục tiêu **junior → middle**. Trọng tâm là hiểu design pattern
 và kiến trúc, không phải xây hệ thống production. Chỉ Backend.
 
-- **Không tự ý `git commit` / `push`.** Mặc định ở nhánh `main`; được yêu cầu commit thì tạo
-  branch trước.
+- **Không tự ý `git commit` / `push`.** Được yêu cầu thì commit và push **thẳng lên `main`**,
+  không tạo branch riêng cho từng bài.
 - **Mỗi bài một thư mục `Day<N>_<Chủ-đề>`** (vd. `Day11-12_Redis`), độc lập hoàn toàn: package
   gốc riêng `com.example.<domain>`, `artifactId` viết thường (`day11-12-redis`), không import chéo.
   Thêm bài mới thì cập nhật bảng trong `README.md` ở root.
