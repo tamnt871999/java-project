@@ -12,6 +12,7 @@ khác package gốc, không chia sẻ một dòng code nào.
 | [`Day10_Consistency-Models/`](Day10_Consistency-Models) | Consistency model cho từng tính năng mạng xã hội — **chỉ có tài liệu** | Mỗi tính năng một mô hình riêng, chọn theo bất biến của chính nó | Tài liệu · slide 16:9 | [README.md](Day10_Consistency-Models/README.md) · [PDF](Day10_Consistency-Models/Day10_Consistency-Models.pdf) |
 | [`Day11-12_Redis/`](Day11-12_Redis) | Leaderboard trên Redis Sorted Set (`ZADD` / `ZREVRANGE`, hai container master–replica) · `DELETE /products/{id}` qua cache hai tầng L1/L2 + Redis Pub/Sub | Spring Boot thường | Spring Boot 3.4 · Spring MVC · Spring Data Redis · Spring Cache · JPA · H2 · Docker Compose | [README.md](Day11-12_Redis/README.md) |
 | [`Day13_JVM-Performance/`](Day13_JVM-Performance) | Phân tích hiệu năng JVM cho endpoint `/process` — **chỉ có tài liệu** | — | Tài liệu · GC log · JFR | [markdown.md](Day13_JVM-Performance/markdown.md) |
+| [`Day15_Advanced-Data-Access/`](Day15_Advanced-Data-Access) | Quản lý kho: nhập hàng với Pessimistic Locking, sửa thông tin với Optimistic Locking, lịch sử bằng Hibernate Envers | Spring Boot thường | Spring Boot 3.4 · Spring MVC · JPA · Hibernate Envers · H2 | [README.md](Day15_Advanced-Data-Access/README.md) |
 
 Chỉ cần **JDK 21**. Mọi bài code dùng Maven Wrapper nên không phải cài Maven — `mvnw` tự tải về
 lần đầu chạy. Mỗi bài một cổng nên bật song song được:
@@ -22,6 +23,7 @@ lần đầu chạy. Mỗi bài một cổng nên bật song song được:
 | `Day3_Domain-Driven-Design` | 8081 | — |
 | `Day8_CAP-Theorem` | 8082 | — |
 | `Day11-12_Redis` | 8083 | **Docker** — hai container Redis, chạy bằng `docker compose up -d` |
+| `Day15_Advanced-Data-Access` | 8085 | — |
 
 `Day9_PACELC-Theorem`, `Day10_Consistency-Models` và `Day13_JVM-Performance` chỉ có tài liệu,
 không có gì để chạy.
@@ -58,6 +60,15 @@ docker compose up -d     # BAT BUOC: redis-master :6379, redis-replica :6380
 curl -X POST http://localhost:8083/leaderboard/an -H 'Content-Type: application/json' -d '{"score": 1500}'
 curl http://localhost:8083/leaderboard/top/3
 curl -X DELETE http://localhost:8083/products/2
+```
+
+```bash
+cd Day15_Advanced-Data-Access
+.\mvnw test              # 14 test
+.\mvnw spring-boot:run   # REST API cong 8085
+
+curl -X POST http://localhost:8085/inventories/1/stock-in -H 'Content-Type: application/json' -d '{"quantity": 5}'
+curl http://localhost:8085/inventories/1/history
 ```
 
 ## Quy ước chung
