@@ -8,6 +8,20 @@ và kiến trúc, không phải xây hệ thống production. Chỉ Backend.
 - **Mỗi bài một thư mục `Day<N>_<Chủ-đề>`** (vd. `Day11-12_Redis`), độc lập hoàn toàn: package
   gốc riêng `com.example.<domain>`, `artifactId` viết thường (`day11-12-redis`), không import chéo.
   Thêm bài mới thì cập nhật bảng trong `README.md` ở root.
+- **Bố cục một bài:**
+
+  ```
+  Day15_Advanced-Data-Access/
+  ├── README.md                     bai nop (hoac file de chi dinh, vd. markdown.md)
+  ├── KIEN-THUC.md                  kien thuc co ban de hieu cac khai niem cua bai
+  ├── pom.xml, mvnw, src/...        source code, chay tai day
+  └── Day15_Advanced-Data-Access/   ban sao CHI GOM src/main, de nop bai
+  ```
+
+  Thư mục con là **bản sao**: sửa `src/main` thì chép lại sang nó trước khi báo xong.
+
+  `KIEN-THUC.md` chỉ giải thích khái niệm **bài thật sự dùng**, mức cơ bản, theo khuôn: *Thứ tự
+  nên học* → mỗi khái niệm (*Là gì* / *Vì sao cần* / *Trong bài này*) → *Hay nhầm* → *Tự kiểm tra*.
 
 ---
 

@@ -3,16 +3,24 @@
 Bài tập môn kiến trúc phần mềm. Mỗi thư mục là một bài **độc lập hoàn toàn**: khác đề bài,
 khác package gốc, không chia sẻ một dòng code nào.
 
+Mỗi bài gồm:
+
+- `README.md` — bài nộp (riêng `Day13_JVM-Performance` dùng `markdown.md` theo đề);
+- `KIEN-THUC.md` — kiến thức cơ bản để hiểu các khái niệm của bài;
+- source code (`pom.xml`, `mvnw`, `src/`) nằm ngay trong thư mục bài, chạy như bình thường;
+- thư mục con **cùng tên với bài** — bản sao chỉ gồm `src/main`, dùng để nộp bài. Bài chỉ có tài
+  liệu thì không có hai mục này.
+
 | Bài | Đề bài | Kiến trúc | Stack | Tài liệu |
 |---|---|---|---|---|
-| [`Day1_Clean-Architect/`](Day1_Clean-Architect) | REST API đặt hàng | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [README.md](Day1_Clean-Architect/README.md) |
-| [`Day3_Domain-Driven-Design/`](Day3_Domain-Driven-Design) | REST API ví điện tử — tái cấu trúc anemic sang rich domain model | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [README.md](Day3_Domain-Driven-Design/README.md) |
-| [`Day8_CAP-Theorem/`](Day8_CAP-Theorem) | Thiết kế distributed system & quyết định CAP — **bài thiết kế**, code chỉ là bonus | Spring Boot thường + Strategy pattern (CP / AP) | Spring Boot 3.4 · Spring MVC · cụm mô phỏng trong bộ nhớ | [README.md](Day8_CAP-Theorem/README.md) |
-| [`Day9_PACELC-Theorem/`](Day9_PACELC-Theorem) | PACELC cho hệ thống Flash Sale — **chỉ có tài liệu** | Một cụm PostgreSQL, mỗi luồng một cặp knob replication | Tài liệu · Mermaid · slide 16:9 | [README.md](Day9_PACELC-Theorem/README.md) · [PDF](Day9_PACELC-Theorem/Day9_PACELC-Theorem.pdf) |
-| [`Day10_Consistency-Models/`](Day10_Consistency-Models) | Consistency model cho từng tính năng mạng xã hội — **chỉ có tài liệu** | Mỗi tính năng một mô hình riêng, chọn theo bất biến của chính nó | Tài liệu · slide 16:9 | [README.md](Day10_Consistency-Models/README.md) · [PDF](Day10_Consistency-Models/Day10_Consistency-Models.pdf) |
-| [`Day11-12_Redis/`](Day11-12_Redis) | Leaderboard trên Redis Sorted Set (`ZADD` / `ZREVRANGE`, hai container master–replica) · `DELETE /products/{id}` qua cache hai tầng L1/L2 + Redis Pub/Sub | Spring Boot thường | Spring Boot 3.4 · Spring MVC · Spring Data Redis · Spring Cache · JPA · H2 · Docker Compose | [README.md](Day11-12_Redis/README.md) |
-| [`Day13_JVM-Performance/`](Day13_JVM-Performance) | Phân tích hiệu năng JVM cho endpoint `/process` — **chỉ có tài liệu** | — | Tài liệu · GC log · JFR | [markdown.md](Day13_JVM-Performance/markdown.md) |
-| [`Day15_Advanced-Data-Access/`](Day15_Advanced-Data-Access) | Quản lý kho: nhập hàng với Pessimistic Locking, sửa thông tin với Optimistic Locking, lịch sử bằng Hibernate Envers | Spring Boot thường | Spring Boot 3.4 · Spring MVC · JPA · Hibernate Envers · H2 | [README.md](Day15_Advanced-Data-Access/README.md) |
+| [`Day1_Clean-Architect/`](Day1_Clean-Architect) | REST API đặt hàng | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [README.md](Day1_Clean-Architect/README.md) · [Kiến thức](Day1_Clean-Architect/KIEN-THUC.md) |
+| [`Day3_Domain-Driven-Design/`](Day3_Domain-Driven-Design) | REST API ví điện tử — tái cấu trúc anemic sang rich domain model | Clean Architecture — 3 package | Spring Boot 3.4 · Spring MVC · JPA · H2 | [README.md](Day3_Domain-Driven-Design/README.md) · [Kiến thức](Day3_Domain-Driven-Design/KIEN-THUC.md) |
+| [`Day8_CAP-Theorem/`](Day8_CAP-Theorem) | Thiết kế distributed system & quyết định CAP — **bài thiết kế**, code chỉ là bonus | Spring Boot thường + Strategy pattern (CP / AP) | Spring Boot 3.4 · Spring MVC · cụm mô phỏng trong bộ nhớ | [README.md](Day8_CAP-Theorem/README.md) · [Kiến thức](Day8_CAP-Theorem/KIEN-THUC.md) |
+| [`Day9_PACELC-Theorem/`](Day9_PACELC-Theorem) | PACELC cho hệ thống Flash Sale — **chỉ có tài liệu** | Một cụm PostgreSQL, mỗi luồng một cặp knob replication | Tài liệu · Mermaid · slide 16:9 | [README.md](Day9_PACELC-Theorem/README.md) · [PDF](Day9_PACELC-Theorem/Day9_PACELC-Theorem.pdf) · [Kiến thức](Day9_PACELC-Theorem/KIEN-THUC.md) |
+| [`Day10_Consistency-Models/`](Day10_Consistency-Models) | Consistency model cho từng tính năng mạng xã hội — **chỉ có tài liệu** | Mỗi tính năng một mô hình riêng, chọn theo bất biến của chính nó | Tài liệu · slide 16:9 | [README.md](Day10_Consistency-Models/README.md) · [PDF](Day10_Consistency-Models/Day10_Consistency-Models.pdf) · [Kiến thức](Day10_Consistency-Models/KIEN-THUC.md) |
+| [`Day11-12_Redis/`](Day11-12_Redis) | Leaderboard trên Redis Sorted Set (`ZADD` / `ZREVRANGE`, hai container master–replica) · `DELETE /products/{id}` qua cache hai tầng L1/L2 + Redis Pub/Sub | Spring Boot thường | Spring Boot 3.4 · Spring MVC · Spring Data Redis · Spring Cache · JPA · H2 · Docker Compose | [README.md](Day11-12_Redis/README.md) · [Kiến thức](Day11-12_Redis/KIEN-THUC.md) |
+| [`Day13_JVM-Performance/`](Day13_JVM-Performance) | Phân tích hiệu năng JVM cho endpoint `/process` — **chỉ có tài liệu** | — | Tài liệu · GC log · JFR | [markdown.md](Day13_JVM-Performance/markdown.md) · [Kiến thức](Day13_JVM-Performance/KIEN-THUC.md) |
+| [`Day15_Advanced-Data-Access/`](Day15_Advanced-Data-Access) | Quản lý kho: nhập hàng với Pessimistic Locking, sửa thông tin với Optimistic Locking, lịch sử bằng Hibernate Envers | Spring Boot thường | Spring Boot 3.4 · Spring MVC · JPA · Hibernate Envers · H2 | [README.md](Day15_Advanced-Data-Access/README.md) · [Kiến thức](Day15_Advanced-Data-Access/KIEN-THUC.md) |
 
 Chỉ cần **JDK 21**. Mọi bài code dùng Maven Wrapper nên không phải cài Maven — `mvnw` tự tải về
 lần đầu chạy. Mỗi bài một cổng nên bật song song được:
