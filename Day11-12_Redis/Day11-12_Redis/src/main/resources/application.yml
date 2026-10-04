@@ -1,0 +1,28 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:products;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+  cache:
+    type: redis
+
+app:
+  leaderboard:
+    key: leaderboard:global
+  product:
+    deletion-channel: product-deletion
+  redis:
+    master:
+      host: localhost
+      port: 6379
+    replica:
+      host: localhost
+      port: 6380
